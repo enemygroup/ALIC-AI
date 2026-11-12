@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Attribute names (sessionService, recognitionService, settingsActivity, supportsAssist) are the documented
+     <voice-interaction-service> attributes; eligibility in the assistant picker must still be verified on the device. -->
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.alic.ai.assist.AlicSessionService"
+    android:recognitionService="com.alic.ai.assist.AlicRecognitionService"
+    android:settingsActivity="com.alic.ai.ui.WakeSettingsActivity"
+    android:supportsAssist="true" />

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ALIC AI</string>
+    <string name="accessibility_description">Lets ALIC AI press Back, Home, Recents and open the notification shade when you ask. It does not read your screen.</string>
+</resources>
