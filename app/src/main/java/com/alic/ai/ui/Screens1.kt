@@ -229,7 +229,7 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
             }
             Box {
                 IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "Menu", tint = C.Text) }
-                DropdownMenu(menu, { menu = false }, containerColor = C.Bg2) {
+                DropdownMenu(menu, { menu = false }, modifier = Modifier.background(C.Bg2)) {
                     DropdownMenuItem(text = { Text("New chat", color = C.Text) }, onClick = { menu = false; vm.newConversation() })
                     DropdownMenuItem(text = { Text("Export chat", color = C.Text) }, onClick = { menu = false; vm.exportCurrent()?.let { shareText(ctx, it) } ?: run { vm.toast = "Nothing to export yet." } })
                     DropdownMenuItem(text = { Text("Clear chat", color = C.Err) }, onClick = { menu = false; confirmClear = true })

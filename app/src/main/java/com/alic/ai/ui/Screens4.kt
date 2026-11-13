@@ -1,6 +1,8 @@
 package com.alic.ai.ui
 
+import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
