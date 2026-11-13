@@ -114,10 +114,11 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         voice.init()
+        loadAvatar()
         online = cm.activeNetwork != null
         try { cm.registerDefaultNetworkCallback(netCb, Handler(Looper.getMainLooper())) } catch (e: Exception) {}
         viewModelScope.launch { settingsStore.flow.collect { settings = it; ThemeState.apply(it.themeMode, it.accent); settingsLoaded = true } }
-        viewModelScope.launch { snapshotFlow { LiveSessionController.lastError }.collect { e -> if (e != null) { toast = e; LiveSessionController.lastError = null } } }
+        viewModelScope.launch { snapshotFlow { LiveSessionController.lastError }.collect { e -> if (e != null) { toast = e; voiceNote = e; LiveSessionController.lastError = null } } }
         viewModelScope.launch {
             // a Live session saved its transcript to disk (possibly started by the wake word): refresh the history list
             snapshotFlow { LiveSessionController.endedTick }.drop(1).collect {
@@ -328,9 +329,10 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------- live: state and logic live in LiveSessionController so the wake word / assistant can start it too ----------
     fun startLive() {
+        voiceNote = null
         when (LiveSessionController.start(LiveSessionController.OWNER_APP)) {
             LiveSessionController.StartResult.NO_API_KEY -> toast = "Add your Gemini API key first (Settings > Gemini API configuration)."
-            LiveSessionController.StartResult.MIC_DENIED -> toast = "Microphone permission is required for Live conversation."
+            LiveSessionController.StartResult.MIC_DENIED -> { toast = "Microphone permission is required for Live conversation."; voiceNote = "Microphone unavailable." }
             else -> {}
         }
     }
@@ -467,6 +469,155 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearVision() { visionBitmap = null; visionImage = null; visionAnswer = "" }
+
+    // ---------- voice screen message, direct tool runs, profile picture ----------
+    var voiceNote by mutableStateOf<String?>(null)
+
+    /** Runs a phone tool directly from a UI screen (alarm, timer ...) and shows its result. */
+    fun runTool(name: String, args: JSONObject) {
+        viewModelScope.launch { toast = tools.run(name, args) }
+    }
+
+    var avatar by mutableStateOf<Bitmap?>(null); private set
+
+    private fun avatarFile() = java.io.File(ctx.filesDir, "avatar.jpg")
+
+    fun loadAvatar() {
+        viewModelScope.launch {
+            val f = avatarFile()
+            avatar = withContext(Dispatchers.IO) { if (f.exists()) BitmapFactory.decodeFile(f.absolutePath) else null }
+        }
+    }
+
+    fun setAvatar(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val bmp = withContext(Dispatchers.IO) {
+                    val (b, _) = decode(uri)
+                    val side = minOf(b.width, b.height)
+                    val sq = Bitmap.createBitmap(b, (b.width - side) / 2, (b.height - side) / 2, side, side)
+                    val small = Bitmap.createScaledBitmap(sq, 512, 512, true)
+                    java.io.FileOutputStream(avatarFile()).use { small.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                    small
+                }
+                avatar = bmp
+            } catch (e: Exception) {
+                toast = "Couldn't set the picture: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    // ---------- persona (name + Gemini voice + personality) ----------
+    fun selectPersona(id: String) {
+        val p = Personas.byId(id)
+        updateSettings { it.copy(persona = p.id, liveVoice = if (p.voice.isNotEmpty()) p.voice else it.liveVoice) }
+        toast = "${p.name} selected (voice: ${if (p.voice.isNotEmpty()) p.voice else settings.liveVoice})"
+    }
+
+    fun selectCustomVoice(voice: String) {
+        updateSettings { it.copy(persona = Personas.custom.id, liveVoice = voice) }
+        toast = "Custom voice: $voice"
+    }
+
+    // ---------- web search (Gemini with Google Search grounding) ----------
+    var webAnswer by mutableStateOf(""); private set
+    var webBusy by mutableStateOf(false); private set
+
+    fun searchWeb(q: String) {
+        if (webBusy || q.isBlank()) return
+        webBusy = true; webAnswer = ""
+        viewModelScope.launch {
+            val sb = StringBuilder()
+            try {
+                gemini.streamParts(
+                    cfg(), systemPrompt("\nAnswer using current information from the web. Be concise and state the key facts."),
+                    gemini.contentsOf(listOf(ChatMessage(role = "user", text = q))), null, true
+                ).collect { part ->
+                    val t = part.optString("text", "")
+                    if (t.isNotEmpty() && !part.has("functionCall")) { sb.append(t); webAnswer = sb.toString() }
+                }
+                if (sb.isEmpty()) webAnswer = "No answer was returned."
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val m = friendly(e); webAnswer = "⚠️ $m"; toast = m
+            }
+            webBusy = false
+        }
+    }
+
+    // ---------- file assistant (PDF, text, images, ... sent to Gemini) ----------
+    var fileName by mutableStateOf(""); private set
+    private var fileData: ImageData? = null
+    var fileAnswer by mutableStateOf(""); private set
+    var fileBusy by mutableStateOf(false); private set
+
+    fun loadFile(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val (name, data) = withContext(Dispatchers.IO) {
+                    val cr = ctx.contentResolver
+                    val mime = cr.getType(uri) ?: "application/octet-stream"
+                    val bytes = cr.openInputStream(uri)?.use { it.readBytes() } ?: throw IllegalStateException("cannot read the file")
+                    if (bytes.size > 12 * 1024 * 1024) throw IllegalStateException("the file is larger than 12 MB")
+                    val nm = cr.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                        if (c.moveToFirst()) c.getString(0) else null
+                    } ?: "file"
+                    nm to ImageData(mime, Base64.encodeToString(bytes, Base64.NO_WRAP))
+                }
+                fileName = name; fileData = data; fileAnswer = ""
+            } catch (e: Exception) {
+                toast = "Couldn't load the file: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun askFile(question: String) {
+        val data = fileData ?: run { toast = "Choose a file first."; return }
+        if (fileBusy) return
+        val q = question.ifBlank { "Summarize this file." }
+        fileBusy = true; fileAnswer = ""
+        viewModelScope.launch {
+            val sb = StringBuilder()
+            try {
+                gemini.stream(cfg(), systemPrompt("\nYou are helping with a file the user attached. Answer from the file."), listOf(ChatMessage(role = "user", text = q)), data)
+                    .collect { sb.append(it); fileAnswer = sb.toString() }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val m = friendly(e); toast = m; fileAnswer = "⚠️ $m"
+            }
+            fileBusy = false
+        }
+    }
+
+    fun clearFile() { fileName = ""; fileData = null; fileAnswer = "" }
+
+    // ---------- image generation ----------
+    var imageBitmap by mutableStateOf<Bitmap?>(null); private set
+    var imageNote by mutableStateOf(""); private set
+    var imageBusy by mutableStateOf(false); private set
+
+    fun generateImage(prompt: String) {
+        if (imageBusy || prompt.isBlank()) return
+        imageBusy = true; imageNote = ""
+        viewModelScope.launch {
+            try {
+                val (bytes, note) = gemini.generateImage(cfg(), settings.imageModel, prompt)
+                if (bytes == null) {
+                    imageNote = note.ifBlank { "The model returned no image. Check the image model in Gemini API configuration." }
+                } else {
+                    imageBitmap = withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+                    imageNote = note
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val m = friendly(e); toast = m; imageNote = "⚠️ $m"
+            }
+            imageBusy = false
+        }
+    }
 
     // ---------- settings / API ----------
     fun updateSettings(block: (AppSettings) -> AppSettings) {

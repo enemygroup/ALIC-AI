@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import com.alic.ai.call.CallMonitor
 import com.alic.ai.data.*
 import com.alic.ai.device.AlicTools
 import com.alic.ai.device.AppLauncher
@@ -123,7 +124,7 @@ object LiveSessionController {
         live.start(
             LiveConfig(
                 secure.apiKey, settings.baseUrl, settings.liveModel, settings.liveVoice,
-                Prompts.system(settings, Prompts.VOICE_HINT), AlicTools.declarations()
+                Prompts.system(settings, Prompts.VOICE_HINT + CallMonitor.hint()), AlicTools.declarations()
             ) { name, args -> tools.run(name, args) }
         )
         ticker?.cancel()

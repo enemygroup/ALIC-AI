@@ -40,6 +40,13 @@ class SettingsStore(private val ctx: Context) {
         val popupAnim = booleanPreferencesKey("popup_animation")
         val silence = intPreferencesKey("silence_timeout")
         val barge = booleanPreferencesKey("voice_interruption")
+        val announce = booleanPreferencesKey("announce_calls")
+        val persona = stringPreferencesKey("persona")
+        val userName = stringPreferencesKey("user_name")
+        val imageModel = stringPreferencesKey("image_model")
+        val clapEnabled = booleanPreferencesKey("clap_enabled")
+        val clapMode = stringPreferencesKey("clap_mode")
+        val clapSens = stringPreferencesKey("clap_sensitivity")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -71,7 +78,14 @@ class SettingsStore(private val ctx: Context) {
             wakeSensitivity = p[K.wakeSens] ?: d.wakeSensitivity,
             popupAnimation = p[K.popupAnim] ?: d.popupAnimation,
             silenceTimeoutSec = p[K.silence] ?: d.silenceTimeoutSec,
-            voiceInterruption = p[K.barge] ?: d.voiceInterruption
+            voiceInterruption = p[K.barge] ?: d.voiceInterruption,
+            announceCalls = p[K.announce] ?: d.announceCalls,
+            persona = p[K.persona] ?: d.persona,
+            userName = p[K.userName] ?: d.userName,
+            imageModel = p[K.imageModel] ?: d.imageModel,
+            clapEnabled = p[K.clapEnabled] ?: d.clapEnabled,
+            clapMode = p[K.clapMode] ?: d.clapMode,
+            clapSensitivity = p[K.clapSens] ?: d.clapSensitivity
         )
     }
 
@@ -90,6 +104,8 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeEnabled] = s.wakeEnabled; p[K.wakeAlwaysOn] = s.wakeAlwaysOn; p[K.wakeSound] = s.wakeSound
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
+            p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
+            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity
         }
     }
 }

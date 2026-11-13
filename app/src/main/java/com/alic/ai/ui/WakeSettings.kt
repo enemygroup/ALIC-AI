@@ -66,6 +66,13 @@ fun WakeSettingsScreen(vm: AlicViewModel, standalone: Boolean = false, onBack: (
         if (!ok) vm.toast = "Notifications are denied. The listener still runs but its status notification may be hidden."
     }
 
+    val callPerms = listOf(
+        Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG,
+        Manifest.permission.ANSWER_PHONE_CALLS, Manifest.permission.READ_CONTACTS
+    )
+    val callOk = remember(tick) { callPerms.all { hasPerm(ctx, it) } }
+    val callLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { tick++ }
+
     fun open(intent: Intent, fallback: Intent? = null) {
         try { ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         catch (e: Exception) { try { fallback?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } catch (e2: Exception) { vm.toast = "This settings page is not available on this phone." } }
@@ -99,6 +106,17 @@ fun WakeSettingsScreen(vm: AlicViewModel, standalone: Boolean = false, onBack: (
             SectionTitle("VOICE")
             GlassCard(Modifier.fillMaxWidth()) {
                 SwitchRow("Voice interruption", "On: you can interrupt ALIC while he speaks. Off: the mic is muted (silence is sent) while he speaks.", s.voiceInterruption) { v -> vm.updateSettings { it.copy(voiceInterruption = v) } }
+            }
+
+            SectionTitle("PHONE CALLS")
+            GlassCard(Modifier.fillMaxWidth()) {
+                SwitchRow("Announce incoming calls", "ALIC says who is calling. With “Hey Alic” on, say “Hey Alic, hang up” or “Hey Alic, uthao”.", s.announceCalls) { v -> vm.updateSettings { it.copy(announceCalls = v) } }
+                Text(if (callOk) "Call permissions: all granted" else "Call permissions: some are missing (Phone state, Call log, Answer/end calls, Contacts)", color = C.Sub, fontSize = 12.sp)
+                if (!callOk) GhostButton("Allow call permissions", { callLauncher.launch(callPerms.toTypedArray()) }, Modifier.padding(top = 8.dp))
+                Text(
+                    "Voice hang-up works while the phone is ringing. Once a call is connected Android usually blocks other apps from the microphone, so it may not hear you; test on your phone.",
+                    color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)
+                )
             }
 
             SectionTitle("STATUS")

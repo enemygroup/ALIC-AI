@@ -42,3 +42,8 @@ The Hindi model is Devanagari-only and has no "alic" word, so it listens for the
 the app checks the model vocabulary at load time and shows the phrases it actually listens for. Test accuracy on your phone.
 Limitations: no guaranteed lock-screen listening/popup, Android 14+ blocks starting a mic service from the background,
 force-stop disables background services, continuous listening uses battery.
+
+## Design (emerald glass)
+Black + emerald palette (#050807 background, #00D98B primary, #00FF9D glow, #244C38 borders).
+Bottom bar: Home, Chat, Voice, Tools, Profile. Home has Chat, a microphone button and Quick Actions.
+Quick Actions and Tools open the existing features only.

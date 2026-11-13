@@ -39,11 +39,14 @@ class GeminiClient(private val http: OkHttpClient) {
         return contents
     }
 
-    private fun buildBody(system: String, contents: JSONArray, tools: JSONArray?): String {
+    private fun buildBody(system: String, contents: JSONArray, tools: JSONArray?, grounding: Boolean = false): String {
         val o = JSONObject()
             .put("contents", contents)
             .put("systemInstruction", JSONObject().put("parts", JSONArray().put(JSONObject().put("text", system))))
-        if (tools != null && tools.length() > 0) {
+        if (grounding) {
+            // Gemini built-in Google Search grounding (used by the Web Search tool)
+            o.put("tools", JSONArray().put(JSONObject().put("google_search", JSONObject())))
+        } else if (tools != null && tools.length() > 0) {
             o.put("tools", JSONArray().put(JSONObject().put("functionDeclarations", tools)))
         }
         return o.toString()
@@ -78,11 +81,11 @@ class GeminiClient(private val http: OkHttpClient) {
     }
 
     /** Streams raw parts. Retries transient failures before any output is produced. */
-    fun streamParts(cfg: ApiConfig, system: String, contents: JSONArray, tools: JSONArray? = null): Flow<JSONObject> = flow {
+    fun streamParts(cfg: ApiConfig, system: String, contents: JSONArray, tools: JSONArray? = null, grounding: Boolean = false): Flow<JSONObject> = flow {
         if (cfg.apiKey.isBlank() && cfg.baseUrl.contains("googleapis.com")) {
             throw GeminiException("No Gemini API key. Open Settings > Gemini API configuration.")
         }
-        val body = buildBody(system, contents, tools)
+        val body = buildBody(system, contents, tools, grounding)
         var attempt = 0
         while (true) {
             attempt++
@@ -125,6 +128,32 @@ class GeminiClient(private val http: OkHttpClient) {
         streamParts(cfg, system, contentsOf(history, image))
             .map { it.optString("text", "") }
             .filter { it.isNotEmpty() }
+
+    /** Image generation through generateContent with IMAGE output. Returns (png/jpeg bytes or null, any text). */
+    suspend fun generateImage(cfg: ApiConfig, model: String, prompt: String): Pair<ByteArray?, String> = withContext(Dispatchers.IO) {
+        val body = JSONObject()
+            .put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
+            .put("generationConfig", JSONObject().put("responseModalities", JSONArray().put("TEXT").put("IMAGE")))
+            .toString()
+        val req = Request.Builder()
+            .url(url(cfg, "models/${model.removePrefix("models/")}:generateContent"))
+            .header("x-goog-api-key", cfg.apiKey)
+            .post(body.toRequestBody(json)).build()
+        http.newCall(req).execute().use { resp ->
+            val txt = resp.body?.string()
+            if (!resp.isSuccessful) throw GeminiException(parseError(txt), resp.code)
+            val parts = JSONObject(txt ?: "{}").optJSONArray("candidates")?.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts")
+            var img: ByteArray? = null
+            val sb = StringBuilder()
+            for (i in 0 until (parts?.length() ?: 0)) {
+                val p = parts!!.getJSONObject(i)
+                p.optString("text").takeIf { it.isNotEmpty() }?.let { sb.append(it) }
+                val inl = p.optJSONObject("inlineData") ?: p.optJSONObject("inline_data")
+                if (inl != null) img = android.util.Base64.decode(inl.optString("data"), android.util.Base64.DEFAULT)
+            }
+            img to sb.toString()
+        }
+    }
 
     /** Returns (textModels, liveModels) available to this key. */
     suspend fun listModels(cfg: ApiConfig): Pair<List<String>, List<String>> = withContext(Dispatchers.IO) {

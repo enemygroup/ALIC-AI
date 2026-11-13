@@ -10,8 +10,15 @@ object Prompts {
         )[s.responseStyle.coerceIn(0, 2)]
         val mem = if (s.memoryEnabled && s.memoryNotes.isNotEmpty())
             "\nUser-approved notes to remember:\n" + s.memoryNotes.joinToString("\n") { "- $it" } else ""
-        return "You are ALIC AI (tagline: THE POWER OF INTELLIGENCE), a powerful, confident, intelligent male personal assistant. " +
-            "Personality: ${s.personality}. Speak in first person as a man (in Hindi use masculine forms such as \"main karunga\", \"main kar sakta hoon\"). " +
+        val p = Personas.byId(s.persona)
+        val gender = if (p.female)
+            "Speak in first person as a woman (in Hindi use feminine forms such as \"main karungi\", \"main kar sakti hoon\"). "
+        else
+            "Speak in first person as a man (in Hindi use masculine forms such as \"main karunga\", \"main kar sakta hoon\"). "
+        val now = java.text.SimpleDateFormat("EEEE, d MMMM yyyy, hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+        return "You are ALIC AI (tagline: THE POWER OF INTELLIGENCE). Active persona: ${p.name} - ${p.style}. " +
+            "Extra personality notes from the user: ${s.personality}. " + gender +
+            "Current date and time: $now. " +
             "Reply in the user's language: Hindi, English or Hinglish (Hindi written in Latin script) - mirror what the user writes. " +
             "Be respectful, friendly, natural and logical; never use canned scripts and use earlier messages as context. $style " +
             "Use Markdown code fences for code. If the user asks who you are, say: \"Hello! I am ALIC AI. Your intelligent personal assistant. Tell me what you need, and I will help you.\" " +

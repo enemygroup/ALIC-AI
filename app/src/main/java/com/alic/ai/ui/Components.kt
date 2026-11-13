@@ -148,7 +148,7 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
             .border(1.dp, if (selected) C.Red else C.Border, shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp)
-    ) { Text(text, color = if (selected) Color.White else C.Text, fontSize = 13.sp, maxLines = 1) }
+    ) { Text(text, color = if (selected) C.OnPrimary else C.Text, fontSize = 13.sp, maxLines = 1) }
 }
 
 @Composable

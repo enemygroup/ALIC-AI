@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.sp
 data class Accent(val id: String, val label: String, val primary: Color, val neon: Color, val deep: Color, val orb: List<Color>)
 
 object Accents {
+    val Emerald = Accent(
+        "emerald", "Emerald", Color(0xFF00D98B), Color(0xFF00FF9D), Color(0xFF00A86B),
+        listOf(Color(0xFF00FF9D), Color(0xFF00D98B), Color(0xFF00A86B), Color(0xFF7DFFC9))
+    )
     val Aurora = Accent(
         "aurora", "Aurora", Color(0xFFFF2D55), Color(0xFF22E4FF), Color(0xFF5B2BD6),
         listOf(Color(0xFF22E4FF), Color(0xFF2F6BFF), Color(0xFFA24DFF), Color(0xFFFF2D55))
@@ -44,14 +48,14 @@ object Accents {
         "sunset", "Sunset", Color(0xFFFF7A3D), Color(0xFFFF5E8A), Color(0xFF8E2C8E),
         listOf(Color(0xFFFFC46B), Color(0xFFFF7A3D), Color(0xFFFF5E8A), Color(0xFFB05CFF))
     )
-    val choices = listOf(Aurora, Red, Cyan, Blue, Purple)
-    fun byId(id: String): Accent = choices.firstOrNull { it.id == id } ?: Aurora
+    val choices = listOf(Emerald, Aurora, Red, Cyan, Blue, Purple)
+    fun byId(id: String): Accent = choices.firstOrNull { it.id == id } ?: Emerald
 }
 
 /** Global theme selection (Compose state, so every screen recolours instantly). */
 object ThemeState {
     var mode by mutableStateOf("dark")      // dark, light, sunset
-    var accentId by mutableStateOf("aurora")
+    var accentId by mutableStateOf("emerald")
     fun apply(m: String, a: String) { mode = m; accentId = a }
     val accent: Accent get() = if (mode == "sunset") Accents.Sunset else Accents.byId(accentId)
     val isDark: Boolean get() = mode != "light"
@@ -62,26 +66,29 @@ object C {
     private val dark get() = ThemeState.isDark
     private val acc get() = ThemeState.accent
 
-    val Bg: Color get() = when (mode) { "light" -> Color(0xFFF4F4F8); "sunset" -> Color(0xFF1B0A2E); else -> Color(0xFF080808) }
-    val Bg2: Color get() = when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0xFF2A1141); else -> Color(0xFF111111) }
-    val Card: Color get() = when (mode) { "light" -> Color(0xFFECECF3); "sunset" -> Color(0xFF35174F); else -> Color(0xFF181818) }
+    val Bg: Color get() = when (mode) { "light" -> Color(0xFFF4F4F8); "sunset" -> Color(0xFF1B0A2E); else -> Color(0xFF050807) }
+    val Bg2: Color get() = when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0xFF2A1141); else -> Color(0xFF0A100D) }
+    val Card: Color get() = when (mode) { "light" -> Color(0xFFECECF3); "sunset" -> Color(0xFF35174F); else -> Color(0xFF101A15) }
     val Text: Color get() = when (mode) { "light" -> Color(0xFF14141A); "sunset" -> Color(0xFFFFF1E6); else -> Color(0xFFFFFFFF) }
-    val Sub: Color get() = when (mode) { "light" -> Color(0xFF5E6068); "sunset" -> Color(0xFFD3B3C9); else -> Color(0xFFA0A0A0) }
-    val Border: Color get() = when (mode) { "light" -> Color(0xFFD2D2DC); "sunset" -> Color(0xFF5B2D63); else -> Color(0xFF303030) }
+    val Sub: Color get() = when (mode) { "light" -> Color(0xFF5E6068); "sunset" -> Color(0xFFD3B3C9); else -> Color(0xFFA3B5AA) }
+    val Border: Color get() = when (mode) { "light" -> Color(0xFFD2D2DC); "sunset" -> Color(0xFF5B2D63); else -> Color(0xFF244C38) }
 
     val Red: Color get() = acc.primary
     val Neon: Color get() = if (dark) acc.neon else acc.primary
     val Dark: Color get() = acc.deep
-    val OnPrimary = Color.White
+    /** Text/icons drawn on the primary colour: near-black on emerald, white on the other accents. */
+    val OnPrimary: Color get() = if (ThemeState.accent.id == "emerald") Color(0xFF031109) else Color.White
+    val Muted: Color get() = when (mode) { "light" -> Color(0xFF8A8D96); "sunset" -> Color(0xFFA88FA3); else -> Color(0xFF64756B) }
+    val Err = Color(0xFFFF5252)
     val orb: List<Color> get() = acc.orb
 
     val Cyan = Color(0xFF22E4FF)
     val Blue = Color(0xFF2F6BFF)
     val Purple = Color(0xFFA24DFF)
 
-    val Glass1: Color get() = when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0x30FFFFFF); else -> Color(0x24FFFFFF) }
-    val Glass2: Color get() = when (mode) { "light" -> Color(0xFFF1F1F7); "sunset" -> Color(0x10FFFFFF); else -> Color(0x0AFFFFFF) }
-    val Glass: Color get() = when (mode) { "light" -> Color(0x14000000); "sunset" -> Color(0x26FFFFFF); else -> Color(0x22FFFFFF) }
+    val Glass1: Color get() = when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0x30FFFFFF); else -> Color(0xCC14231B) }
+    val Glass2: Color get() = when (mode) { "light" -> Color(0xFFF1F1F7); "sunset" -> Color(0x10FFFFFF); else -> Color(0x990A100D) }
+    val Glass: Color get() = when (mode) { "light" -> Color(0x14000000); "sunset" -> Color(0x26FFFFFF); else -> Color(0x6614231B) }
     val BgTop: Color get() = lerp(Bg, acc.deep, if (dark) 0.30f else 0.10f)
 }
 
@@ -129,7 +136,7 @@ fun fieldColors() = OutlinedTextFieldDefaults.colors(
 fun RedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: ImageVector? = null) {
     Button(
         onClick = onClick, enabled = enabled, modifier = modifier.height(48.dp), shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = Color.White, disabledContainerColor = C.Dark.copy(alpha = 0.4f), disabledContentColor = C.Sub)
+        colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = C.OnPrimary, disabledContainerColor = C.Dark.copy(alpha = 0.4f), disabledContentColor = C.Sub)
     ) {
         if (icon != null) { androidx.compose.material3.Icon(icon, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)) }
         Text(text, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -163,7 +170,7 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)? = null, actions: @Composab
 
 @Composable
 fun StatusDot(on: Boolean) {
-    Box(Modifier.size(9.dp).clip(CircleShape).background(if (on) Color(0xFF2ECC71) else C.Red))
+    Box(Modifier.size(9.dp).clip(CircleShape).background(if (on) Color(0xFF2ECC71) else C.Err))
 }
 
 fun shareText(ctx: Context, text: String) {

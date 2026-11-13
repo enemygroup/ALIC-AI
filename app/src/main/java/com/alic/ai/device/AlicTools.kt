@@ -11,9 +11,11 @@ import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.net.Uri
 import android.provider.AlarmClock
+import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.core.content.ContextCompat
+import com.alic.ai.call.CallActions
 import com.alic.ai.service.AlicAccessibilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -66,6 +68,14 @@ object AlicTools {
             Triple("section", "STRING", "wifi, bluetooth, display, sound, battery, location, airplane, apps or general"), required = listOf("section")))
         .put(fn("set_volume", "Set the phone volume as a percentage (0-100).",
             Triple("percent", "INTEGER", "Volume percent 0-100"), required = listOf("percent")))
+        .put(fn("end_call", "Hang up, reject or end the current or ringing phone call."))
+        .put(fn("answer_call", "Answer the ringing phone call."))
+        .put(fn("call_speaker", "Turn the speakerphone on or off during a phone call.",
+            Triple("on", "BOOLEAN", "true = speaker on"), required = listOf("on")))
+        .put(fn("add_calendar_event", "Create a calendar event (the calendar app opens with the details filled in for the user to save).",
+            Triple("title", "STRING", "Event title"), Triple("start", "STRING", "Local start date-time like 2026-11-20T18:30"),
+            Triple("duration_minutes", "INTEGER", "Length in minutes"), Triple("location", "STRING", "Optional place"),
+            required = listOf("title", "start")))
         .put(fn("get_time", "Get the current date and time on the phone."))
 }
 
@@ -91,6 +101,10 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
                 "flashlight" -> flashlight(a.optBoolean("on", true))
                 "open_settings" -> settingsPage(a.optString("section"))
                 "set_volume" -> volume(a.optInt("percent", -1))
+                "end_call" -> CallActions.hangUp(ctx)
+                "answer_call" -> CallActions.answer(ctx)
+                "call_speaker" -> CallActions.speaker(ctx, a.optBoolean("on", true))
+                "add_calendar_event" -> calendarEvent(a.optString("title"), a.optString("start"), a.optInt("duration_minutes", 60), a.optString("location"))
                 "get_time" -> SimpleDateFormat("EEEE, d MMMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
                 else -> "Unknown function: $name"
             }
@@ -172,6 +186,23 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
             start(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + enc(dest))))
         }
         return "Opening Maps for $dest."
+    }
+
+    private fun calendarEvent(title: String, start: String, minutes: Int, location: String): String {
+        if (title.isBlank()) return "No event title given."
+        val begin = try {
+            java.time.LocalDateTime.parse(start.trim().take(16)).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        } catch (e: Exception) {
+            return "Could not understand the start time \"$start\". Use a format like 2026-11-20T18:30."
+        }
+        start(
+            Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, begin + minutes.coerceIn(5, 1440) * 60_000L)
+                .putExtra(CalendarContract.Events.TITLE, title)
+                .putExtra(CalendarContract.Events.EVENT_LOCATION, location)
+        )
+        return "Calendar event \"$title\" is open for the user to save."
     }
 
     // ---- clock ----

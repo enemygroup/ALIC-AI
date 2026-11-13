@@ -25,6 +25,8 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.alic.ai.AlicApp
 import com.alic.ai.MainActivity
+import com.alic.ai.call.CallAction
+import com.alic.ai.call.CallMonitor
 import com.alic.ai.data.AppSettings
 import com.alic.ai.data.SettingsStore
 import com.alic.ai.live.CloseCommands
@@ -133,6 +135,7 @@ class WakeWordService : Service() {
     private var worker: Thread? = null
     @Volatile private var model: Model? = null
     @Volatile private var phrases: List<String> = emptyList()
+    @Volatile private var callPhrases: List<Pair<String, CallAction>> = emptyList()
     @Volatile private var cfg = AppSettings()
     @Volatile private var lastWakeMs = 0L
     private val main = Handler(Looper.getMainLooper())
@@ -248,6 +251,7 @@ class WakeWordService : Service() {
             }
             val m = Model(dir.absolutePath)
             phrases = usable
+            callPhrases = VoskModelManager.usableCallCommands(dir, usable)
             phrasesInfo.value = usable.joinToString(" · ")
             model = m
             m
@@ -283,10 +287,17 @@ class WakeWordService : Service() {
             if (!cfg.wakeEnabled) { status.value = "Off (wake word is disabled in settings)"; return }
             val m = ensureModel() ?: return
             if (!isCurrent(gen)) return
-            // grammar equivalent to ["hey alic", ..., "[unk]"]: recognition is constrained to the wake phrase
-            val grammar = JSONArray().also { a -> phrases.forEach { a.put(it) }; a.put("[unk]") }.toString()
-            val rec = Recognizer(m, RATE.toFloat(), grammar)
+            // grammar equivalent to ["hey alic", ..., "[unk]"]: recognition is constrained to the wake phrase.
+            // While a call is ringing it also contains "hey alic + hang up / answer" commands.
+            fun grammar(call: Boolean): String = JSONArray().also { a ->
+                phrases.forEach { a.put(it) }
+                if (call) callPhrases.forEach { a.put(it.first) }
+                a.put("[unk]")
+            }.toString()
+            var callMode = false
+            var rec = Recognizer(m, RATE.toFloat(), grammar(false))
             recognizer = rec
+            var lastCallCmdMs = 0L
             status.value = "Listening for “Hey Alic”"
 
             val buf = ByteArray(2560)       // 80 ms of 16 kHz PCM16
@@ -310,6 +321,15 @@ class WakeWordService : Service() {
                     if (ar.recordingState != AudioRecord.RECORDSTATE_RECORDING) { release(ar); ar = null; failures++; Thread.sleep(backoff); continue }
                     backoff = 500L; failures = 0
                     status.value = "Listening for “Hey Alic”"
+                }
+                val wantCall = CallMonitor.ringing && callPhrases.isNotEmpty()
+                if (wantCall != callMode) {
+                    callMode = wantCall
+                    try { rec.close() } catch (e: Throwable) {}
+                    rec = Recognizer(m, RATE.toFloat(), grammar(callMode))
+                    recognizer = rec
+                    hang = 0; feeding = false
+                    status.value = if (callMode) "Phone is ringing: listening for “Hey Alic, hang up / answer”" else "Listening for “Hey Alic”"
                 }
                 val cur = ar ?: continue
                 val n = cur.read(buf, 0, buf.size)
@@ -340,7 +360,16 @@ class WakeWordService : Service() {
                     val text = try {
                         if (isFinal) JSONObject(rec.result).optString("text") else JSONObject(rec.partialResult).optString("partial")
                     } catch (e: Exception) { "" }
-                    if (text.isNotEmpty() && matchesWake(text)) {
+                    val cmd = if (callMode && text.isNotEmpty()) matchCall(text) else null
+                    if (cmd != null) {
+                        val now = SystemClock.elapsedRealtime()
+                        if (now - lastCallCmdMs >= 2500) {
+                            lastCallCmdMs = now
+                            rec.reset(); hang = 0; feeding = false
+                            main.post { CallMonitor.runVoiceCommand(applicationContext, cmd) }
+                        }
+                    } else if (text.isNotEmpty() && matchesWake(text) && (!callMode || isFinal)) {
+                        // while ringing, a bare "Hey Alic" waits for the final result so it cannot pre-empt "Hey Alic, hang up"
                         val now = SystemClock.elapsedRealtime()
                         if (now - lastWakeMs >= WAKE_COOLDOWN_MS && now >= WakeGate.ignoreUntil && !sessionActiveFlag) {
                             lastWakeMs = now
@@ -362,6 +391,15 @@ class WakeWordService : Service() {
             release(ar)
             try { recognizer?.close() } catch (e: Throwable) {}
         }
+    }
+
+    private fun matchCall(raw: String): CallAction? {
+        val tokens = CloseCommands.normalize(raw).split(' ').filter { it.isNotEmpty() }
+        for ((phrase, action) in callPhrases) {
+            val pt = CloseCommands.normalize(phrase).split(' ')
+            if ((0..tokens.size - pt.size).any { st -> pt.indices.all { tokens[st + it] == pt[it] } }) return action
+        }
+        return null
     }
 
     private fun matchesWake(raw: String): Boolean {

@@ -43,40 +43,6 @@ import androidx.navigation.NavController
 import com.alic.ai.device.Command
 import java.io.File
 
-// ---------------- Tools hub ----------------
-@Composable
-fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
-    data class Tool(val title: String, val sub: String, val icon: ImageVector, val action: () -> Unit)
-    val tools = listOf(
-        Tool("Live Conversation", "Real-time voice with Gemini Live", Icons.Filled.GraphicEq) { goLive() },
-        Tool("Permissions", "Mic, camera, accessibility", Icons.Filled.Security) { nav.navigate("permissions") },
-        Tool("Wake word", "Hey Alic, popup, assistant", Icons.Filled.GraphicEq) { nav.navigate("wake") },
-        Tool("Coding Studio", "Generate, explain, debug code", Icons.Filled.Code) { nav.navigate("coding") },
-        Tool("AI Vision", "Camera, gallery, screenshots", Icons.Filled.CameraAlt) { nav.navigate("vision") },
-        Tool("YouTube Assistant", "Search videos and music", Icons.Filled.PlayArrow) { nav.navigate("youtube") },
-        Tool("App Control", "Open any installed app", Icons.Filled.Apps) { nav.navigate("apps") }
-    )
-    Column(Modifier.fillMaxSize().background(screenBg())) {
-        ScreenHeader("AI Tools")
-        LazyVerticalGrid(
-            GridCells.Fixed(2), contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(tools) { t ->
-                GlassCard(Modifier.fillMaxWidth().height(150.dp), onClick = t.action) {
-                    Box(
-                        Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(C.orb[tools.indexOf(t) % C.orb.size], C.Dark))),
-                        contentAlignment = Alignment.Center
-                    ) { Icon(t.icon, null, tint = C.OnPrimary, modifier = Modifier.size(24.dp)) }
-                    Spacer(Modifier.height(10.dp))
-                    Text(t.title, color = C.Text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                    Text(t.sub, color = C.Sub, fontSize = 12.sp)
-                }
-            }
-        }
-    }
-}
-
 // ---------------- Coding Studio ----------------
 @Composable
 fun CodingScreen(vm: AlicViewModel, nav: NavController) {

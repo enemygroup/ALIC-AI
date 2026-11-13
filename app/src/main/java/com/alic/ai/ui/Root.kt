@@ -23,6 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alic.ai.device.CommandRouter
+import android.content.Context
+
 
 /** Runs [action] once the microphone permission is granted (asks if needed). Used for Live. */
 @Composable
@@ -50,8 +52,6 @@ fun rememberMicGate(vm: AlicViewModel): Gate {
     return gate
 }
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
-
 @Composable
 fun AlicRoot(vm: AlicViewModel) {
     val ctx = LocalContext.current
@@ -65,76 +65,46 @@ fun AlicRoot(vm: AlicViewModel) {
         vm.toast?.let { snack.showSnackbar(it); vm.toast = null }
     }
 
-    val tabs = listOf(
-        Tab("home", "Home", Icons.Filled.Home),
-        Tab("chat", "Chat", Icons.Filled.ChatBubble),
-        Tab("tools", "AI Tools", Icons.Filled.AutoAwesome),
-        Tab("history", "History", Icons.Filled.History),
-        Tab("settings", "Settings", Icons.Filled.Settings)
-    )
-    val goLive: () -> Unit = { gate { vm.startLive(); if (vm.liveActive) nav.navigate("live") } }
-
-    SideEffect {
-        (ctx as? Activity)?.window?.let { w ->
-            w.statusBarColor = C.Bg.toArgb()
-            w.navigationBarColor = C.Bg2.toArgb()
-            val ic = WindowCompat.getInsetsController(w, w.decorView)
-            ic.isAppearanceLightStatusBars = !ThemeState.isDark
-            ic.isAppearanceLightNavigationBars = !ThemeState.isDark
+    val goLive: () -> Unit = {
+        gate {
+            vm.startLive()
+            nav.navigate("live")
         }
     }
-    // While ALIC talks live, the hardware volume keys control its (voice-call) stream.
-    LaunchedEffect(vm.liveActive) {
-        (ctx as? Activity)?.volumeControlStream =
-            if (vm.liveActive) AudioManager.STREAM_VOICE_CALL else AudioManager.USE_DEFAULT_STREAM_TYPE
-    }
-    // Launched as the default assistant (home/power-button hold) -> open Live.
-    LaunchedEffect(vm.liveRequested, route) {
-        if (vm.liveRequested && route != null && route != "splash" && route != "permissions" && route != "live") {
-            vm.liveRequested = false
-            goLive()
-        }
-    }
+    val barRoutes = setOf("home", "chat", "live", "tools", "profile")
 
     Scaffold(
         containerColor = C.Bg,
         snackbarHost = { SnackbarHost(snack) },
         bottomBar = {
-            if (tabs.any { it.route == route }) {
-                NavigationBar(containerColor = C.Bg2) {
-                    tabs.forEach { t ->
-                        NavigationBarItem(
-                            selected = route == t.route,
-                            onClick = {
-                                nav.navigate(t.route) { popUpTo("home") { saveState = true }; launchSingleTop = true; restoreState = true }
-                            },
-                            icon = { Icon(t.icon, t.label) },
-                            label = { Text(t.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White, selectedTextColor = C.Neon, indicatorColor = C.Dark,
-                                unselectedIconColor = C.Sub, unselectedTextColor = C.Sub
-                            )
-                        )
-                    }
+            if (route in barRoutes) {
+                AppBottomBar(route) { target ->
+                    if (target == "live") goLive()
+                    else nav.navigate(target) { popUpTo("home") { saveState = true }; launchSingleTop = true; restoreState = true }
                 }
             }
         }
     ) { pad ->
         NavHost(nav, startDestination = "splash", modifier = Modifier.padding(pad)) {
             composable("splash") {
-                SplashScreen {
+                SplashScreen(ready = vm.settingsLoaded) {
                     val done = ctx.getSharedPreferences("alic_prefs", Context.MODE_PRIVATE).getBoolean("perm_done", false)
                     nav.navigate(if (done) "home" else "permissions") { popUpTo("splash") { inclusive = true } }
                 }
             }
             composable("permissions") { PermissionsScreen(vm, nav) }
             composable("home") { HomeScreen(vm, nav, goLive) }
-            composable("chat") { ChatScreen(vm) }
+            composable("chat") { ChatScreen(vm, goLive) }
+            composable("quick") { QuickScreen(vm, nav, goLive) }
             composable("tools") { ToolsScreen(vm, nav, goLive) }
-            composable("history") { HistoryScreen(vm, nav) }
+            composable("profile") { ProfileScreen(vm, nav) }
             composable("settings") { SettingsScreen(vm, nav) }
+            composable("history") { HistoryScreen(vm, nav) }
             composable("wake") { WakeSettingsScreen(vm, onBack = { nav.popBackStack() }) }
             composable("aiconfig") { AIConfigScreen(vm, nav) }
+            composable("websearch") { WebSearchScreen(vm, nav) }
+            composable("imagegen") { ImageGenScreen(vm, nav) }
+            composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("coding") { CodingScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }
             composable("youtube") { YouTubeScreen(vm, nav) }

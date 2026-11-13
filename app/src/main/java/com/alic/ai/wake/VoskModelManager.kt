@@ -2,6 +2,7 @@ package com.alic.ai.wake
 
 import android.content.Context
 import android.content.res.AssetManager
+import com.alic.ai.call.CallAction
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
@@ -29,6 +30,33 @@ object VoskModelManager {
         "hey alic", "hey alick", "hey alec", "hey alik",
         "हे एलेक", "हेय एलेक", "हे एलिस", "हेय एलिस", "हे एलिक", "हे ऐलिक", "हे अलिक"
     )
+
+    private val CALL_COMMANDS: List<Pair<String, CallAction>> = listOf(
+        "hang up" to CallAction.HANGUP, "cut the call" to CallAction.HANGUP, "cut call" to CallAction.HANGUP,
+        "end call" to CallAction.HANGUP, "reject" to CallAction.HANGUP,
+        "answer" to CallAction.ANSWER, "pick up" to CallAction.ANSWER, "receive" to CallAction.ANSWER,
+        "हैंग अप" to CallAction.HANGUP, "कॉल कट" to CallAction.HANGUP, "कट कर दो" to CallAction.HANGUP,
+        "कॉल काटो" to CallAction.HANGUP, "फोन काटो" to CallAction.HANGUP, "कॉल काट दो" to CallAction.HANGUP,
+        "फोन कट" to CallAction.HANGUP, "काट दो" to CallAction.HANGUP, "काटो" to CallAction.HANGUP,
+        "कट" to CallAction.HANGUP, "रिजेक्ट" to CallAction.HANGUP,
+        "कॉल उठाओ" to CallAction.ANSWER, "फोन उठाओ" to CallAction.ANSWER, "उठाओ" to CallAction.ANSWER,
+        "उठा लो" to CallAction.ANSWER, "कॉल रिसीव करो" to CallAction.ANSWER, "रिसीव करो" to CallAction.ANSWER,
+        "रिसीव" to CallAction.ANSWER, "आंसर" to CallAction.ANSWER
+    )
+
+    /**
+     * "<wake phrase> <command>" phrases that end or answer a ringing call, e.g. "हे एलेक हैंग अप".
+     * Only commands whose words exist in the loaded model's vocabulary are kept. Longest phrases first.
+     */
+    fun usableCallCommands(dir: File, wakePhrases: List<String>): List<Pair<String, CallAction>> {
+        val present = vocabularyContains(dir, CALL_COMMANDS.flatMap { it.first.split(' ') }.toSet())
+        val out = mutableListOf<Pair<String, CallAction>>()
+        for ((cmd, act) in CALL_COMMANDS) {
+            if (!cmd.split(' ').all { it in present }) continue
+            for (w in wakePhrases) out.add("$w $cmd" to act)
+        }
+        return out.sortedByDescending { it.first.length }
+    }
 
     fun modelDir(ctx: Context) = File(ctx.filesDir, TARGET)
 

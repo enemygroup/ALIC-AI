@@ -59,6 +59,9 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
                 if (Build.VERSION.SDK_INT >= 33) Manifest.permission.POST_NOTIFICATIONS else null),
             PermRow("Contacts", "Find a person by name when you say “call Mummy” or “message Papa”", Icons.Filled.Contacts, hasPerm(ctx, Manifest.permission.READ_CONTACTS), "runtime", Manifest.permission.READ_CONTACTS),
             PermRow("Phone calls", "Place the call directly instead of only opening the dialer", Icons.Filled.Call, hasPerm(ctx, Manifest.permission.CALL_PHONE), "runtime", Manifest.permission.CALL_PHONE),
+            PermRow("Phone state", "Know when a call is ringing so ALIC can announce who is calling", Icons.Filled.Phone, hasPerm(ctx, Manifest.permission.READ_PHONE_STATE), "runtime", Manifest.permission.READ_PHONE_STATE),
+            PermRow("Call log", "Lets Android give ALIC the caller's number", Icons.Filled.History, hasPerm(ctx, Manifest.permission.READ_CALL_LOG), "runtime", Manifest.permission.READ_CALL_LOG),
+            PermRow("Answer and end calls", "Answer or hang up by voice: “Hey Alic, hang up”", Icons.Filled.CallEnd, hasPerm(ctx, Manifest.permission.ANSWER_PHONE_CALLS), "runtime", Manifest.permission.ANSWER_PHONE_CALLS),
             PermRow("Accessibility service", "Lets ALIC press Back, Home, Recents and open notifications by command. It does not read your screen.", Icons.Filled.Accessibility, AlicAccessibilityService.isEnabled(ctx), "accessibility"),
             PermRow("Display over other apps", "Lets ALIC open apps and keep working while another app is on screen", Icons.Filled.Layers, Settings.canDrawOverlays(ctx), "overlay"),
             PermRow("Default AI assistant", "Make ALIC the assistant that opens when you hold the Home button or power button.", Icons.Filled.AutoAwesome, isDefaultAssistant(ctx), "assistant")
@@ -146,7 +149,7 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
                         else Button(
                             onClick = { act(r) },
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = Color.White),
+                            colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = C.OnPrimary),
                             contentPadding = PaddingValues(horizontal = 14.dp)
                         ) { Text("Allow") }
                     }

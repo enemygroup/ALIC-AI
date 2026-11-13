@@ -1,6 +1,7 @@
 package com.alic.ai.voice
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
@@ -16,6 +17,7 @@ class VoiceEngine(private val ctx: Context) {
     private var tts: TextToSpeech? = null
     @Volatile private var ttsReady = false
     @Volatile private var pendingDone: (() -> Unit)? = null
+    @Volatile private var pendingSpeak: (() -> Unit)? = null
     private var lastId = ""
 
     val ttsVoicesChanged = MutableStateFlow(0)
@@ -24,6 +26,16 @@ class VoiceEngine(private val ctx: Context) {
         if (tts != null) return
         tts = TextToSpeech(ctx) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
+            if (ttsReady) {
+                try {
+                    tts?.setAudioAttributes(
+                        AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+                    )
+                } catch (e: Exception) {}
+                val p = pendingSpeak
+                pendingSpeak = null
+                if (p != null) main.post(p)
+            }
             ttsVoicesChanged.value = ttsVoicesChanged.value + 1
         }
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
@@ -59,6 +71,11 @@ class VoiceEngine(private val ctx: Context) {
         .replace(Regex("https?://\\S+"), " link ")
         .replace(Regex("[*#`_>|~]"), "")
         .replace(Regex("\\s+"), " ").trim()
+
+    /** Speaks now if the TTS engine is ready, otherwise as soon as it finishes initialising. */
+    fun speakWhenReady(raw: String, s: AppSettings, onDone: () -> Unit) {
+        if (ttsReady) speak(raw, s, onDone) else pendingSpeak = { speak(raw, s, onDone) }
+    }
 
     fun speak(raw: String, s: AppSettings, onDone: () -> Unit) {
         val t = tts

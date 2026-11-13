@@ -44,7 +44,7 @@ data class AppSettings(
     val notifications: Boolean = true,
     val guest: Boolean = false,
     val themeMode: String = "dark",   // dark, light, sunset
-    val accent: String = "aurora",
+    val accent: String = "emerald",
     // --- wake word / popup / barge-in ---
     val wakeEnabled: Boolean = false,
     val wakeAlwaysOn: Boolean = true,
@@ -52,5 +52,12 @@ data class AppSettings(
     val wakeSensitivity: String = "medium", // kam, medium, zyada -> VAD RMS 600 / 300 / 120
     val popupAnimation: Boolean = true,
     val silenceTimeoutSec: Int = 8,          // 5, 8 or 15
-    val voiceInterruption: Boolean = true     // aurora, red, cyan, blue, purple
+    val voiceInterruption: Boolean = true,
+    val announceCalls: Boolean = true,       // speak who is calling
+    val persona: String = "ultron",          // eden, ultron, edait, rtk, ragan, custom
+    val userName: String = "",
+    val imageModel: String = "gemini-2.5-flash-image",
+    val clapEnabled: Boolean = false,
+    val clapMode: String = "double",         // single, double
+    val clapSensitivity: String = "medium"   // low, medium, high     // aurora, red, cyan, blue, purple
 )
