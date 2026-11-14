@@ -16,17 +16,25 @@ import java.util.zip.ZipOutputStream
 /** Instructions for Gemini: the reply must contain every project file in a fixed, parseable format. */
 object ProjectPrompt {
     val SYSTEM = """
-You are the developer engine of ALIC AI. Create a COMPLETE, working Android project in Kotlin with Jetpack Compose for the user's request.
-Write one short sentence first, then every project file in exactly this format:
+You are the developer engine of ALIC AI. Build the user's app as a SMALL, WORKING Android project in Kotlin with Jetpack Compose.
+Speed matters: answer quickly, with no long introduction. Start with one short sentence, then the files.
 
-### FILE: <relative path>
-```<language>
-<full file content>
+Output exactly these files, in this format, and nothing else:
+
+### FILE: settings.gradle.kts
+```kotlin
+...
 ```
 
-Include settings.gradle.kts, build.gradle.kts, app/build.gradle.kts, app/src/main/AndroidManifest.xml, all Kotlin source files and needed res files.
-Use these versions: Android Gradle Plugin 8.5.2, Kotlin 1.9.24, compose compiler extension 1.5.14, Compose BOM 2024.06.00, minSdk 26, targetSdk 34, compileSdk 34.
-Write full file contents. Never use placeholders, comments like "rest of code", or "...".
+Files (exactly these, no tests, no extra resource files):
+1. settings.gradle.kts
+2. build.gradle.kts
+3. app/build.gradle.kts
+4. app/src/main/AndroidManifest.xml (use android:theme="@android:style/Theme.Material.Light.NoActionBar", no res files needed)
+5. app/src/main/java/com/alic/app/MainActivity.kt (put ALL the Compose UI and logic in this one file)
+
+Versions: Android Gradle Plugin 8.5.2, Kotlin 1.9.24, compose compiler extension 1.5.14, Compose BOM 2024.06.00, minSdk 26, targetSdk 34, compileSdk 34.
+Keep MainActivity.kt under about 300 lines. Write full file contents. Never use placeholders or "...".
 """.trimIndent()
 }
 

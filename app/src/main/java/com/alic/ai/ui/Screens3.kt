@@ -173,7 +173,7 @@ private fun CodingEngineCard(vm: AlicViewModel) {
     GlassCard(Modifier.fillMaxWidth()) {
         Text("Used by Coding Studio, the project builder and voice project requests.", color = C.Sub, fontSize = 12.sp)
         Spacer(Modifier.height(8.dp))
-        ChipsRow(listOf("openai" to "ChatGPT (OpenAI)", "gemini" to "Gemini"), s.codingProvider) { v ->
+        ChipsRow(listOf("gemini" to "Gemini (free)", "openai" to "ChatGPT (OpenAI)"), s.codingProvider) { v ->
             vm.updateSettings { it.copy(codingProvider = v) }
         }
         Text(

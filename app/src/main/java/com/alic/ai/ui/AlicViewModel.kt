@@ -39,6 +39,8 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 import okhttp3.OkHttpClient
 import org.json.JSONArray
@@ -722,15 +724,29 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         toast = if (hasOpenAIKey) "OpenAI key saved securely." else "OpenAI key removed."
     }
 
-    /** Coding engine: ChatGPT when selected and a key exists, otherwise Gemini. */
-    private fun codeFlow(system: String, hist: List<ChatMessage>): Flow<String> {
+    /**
+     * Coding engine. Gemini is the default (free tier). ChatGPT is used only when selected and has a key;
+     * on a credit, quota, billing or auth error before any output, it continues with Gemini automatically.
+     */
+    private fun codeFlow(system: String, hist: List<ChatMessage>): Flow<String> = flow {
         val st = settings
-        if (st.codingProvider == "openai") {
-            val key = secure.openaiKey
-            if (key.isNotBlank()) return openai.stream(key, st.openaiModel, system, hist)
-            toast = "No OpenAI key saved. Using Gemini for coding."
+        val key = secure.openaiKey
+        if (st.codingProvider == "openai" && key.isNotBlank()) {
+            var emitted = false
+            try {
+                openai.stream(key, st.openaiModel, system, hist).collect {
+                    emitted = true
+                    emit(it)
+                }
+                return@flow
+            } catch (e: ApiException) {
+                val msg = e.message.orEmpty().lowercase()
+                val switchable = e.code in listOf(401, 402, 403, 429) || msg.contains("credit") || msg.contains("quota") || msg.contains("billing")
+                if (emitted || !switchable) throw e
+                toast = "ChatGPT has no credits or quota left. Continuing with Gemini."
+            }
         }
-        return gemini.stream(cfg(), system, hist)
+        emitAll(gemini.stream(cfg(), system, hist))
     }
 
     fun saveApiKey(k: String) { secure.apiKey = k; hasKey = secure.apiKey.isNotBlank(); toast = if (hasKey) "API key saved securely." else "API key removed." }
