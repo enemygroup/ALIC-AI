@@ -10,7 +10,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -207,6 +212,13 @@ fun CodingOverlay(vm: AlicViewModel) {
         CodeStage.IDLE -> ""
     }
 
+    var showPreview by remember { mutableStateOf(false) }
+    var previewPage by remember { mutableStateOf("index.html") }
+    val webDir = vm.webDir
+    if (showPreview && webDir != null) {
+        WebsitePreview(webDir, vm.webPages, previewPage, { previewPage = it }, { showPreview = false })
+    }
+
     Dialog(
         onDismissRequest = { if (!busy) vm.dismissCoding() },
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = !busy, dismissOnClickOutside = false)
@@ -283,7 +295,7 @@ fun CodingOverlay(vm: AlicViewModel) {
                     Spacer(Modifier.height(10.dp))
                     Column(Modifier.fillMaxWidth()) {
                         vm.codeChecks.forEach { line ->
-                            val good = line.contains("brackets OK") || line.startsWith("Saved") || line.startsWith("ZIP:")
+                            val good = line.contains("brackets OK") || line.startsWith("Saved") || line.startsWith("ZIP:") || line.startsWith("Pages OK")
                             Text(
                                 (if (good) "✔ " else "✖ ") + line, fontFamily = FontFamily.Monospace, fontSize = 11.sp,
                                 color = if (good) GREEN else NEON
@@ -306,18 +318,54 @@ fun CodingOverlay(vm: AlicViewModel) {
                             color = if (done) GREEN else NEON, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, fontSize = 15.sp
                         )
                         Text(
-                            if (done) "Files are saved in Download/ALIC_AI. APK build is not connected yet."
+                            if (done) "Files are saved in Download/ALIC_AI."
                             else "Open the chat to read the reply and ask ALIC to fix the failing block.",
                             color = Color.White, fontSize = 11.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
 
+                if (done && webDir != null) {
+                    Spacer(Modifier.height(12.dp))
+                    GradientButton("Open website preview", { previewPage = "index.html"; showPreview = true }, Modifier.fillMaxWidth())
+                }
                 if (!busy) {
                     Spacer(Modifier.height(12.dp))
                     GradientButton("Close", { vm.dismissCoding() }, Modifier.fillMaxWidth())
                 }
             }
+        }
+    }
+}
+
+/** Shows the generated website from the app's private folder. Only local files are loaded. */
+@Composable
+private fun WebsitePreview(dir: String, pages: List<String>, page: String, onPage: (String) -> Unit, onClose: () -> Unit) {
+    var loaded by remember { mutableStateOf("") }
+    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(Modifier.fillMaxSize().background(Color.Black).padding(top = 28.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) {
+                    ChipsRow(pages.map { it to it.removeSuffix(".html") }, page, onPage)
+                }
+                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, "Close preview", tint = Color.White) }
+            }
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        settings.javaScriptEnabled = true
+                        settings.allowFileAccess = true
+                        webViewClient = WebViewClient()
+                    }
+                },
+                update = { view ->
+                    if (loaded != page) {
+                        view.loadUrl("file://$dir/$page")
+                        loaded = page
+                    }
+                },
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            )
         }
     }
 }

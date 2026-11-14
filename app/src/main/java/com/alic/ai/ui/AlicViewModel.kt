@@ -23,6 +23,7 @@ import com.alic.ai.data.*
 import com.alic.ai.device.AppInfo
 import com.alic.ai.device.AlicTools
 import com.alic.ai.projectbuild.ProjectBuilder
+import com.alic.ai.projectbuild.WebProjectPrompt
 import com.alic.ai.projectbuild.ProjectParser
 import com.alic.ai.projectbuild.ProjectPrompt
 import com.alic.ai.projectbuild.ProjectSaver
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.first
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.ByteArrayOutputStream
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -60,6 +62,8 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS).readTimeout(90, TimeUnit.SECONDS).build()
     private val gemini = GeminiClient(http)
+    /** Coding uses its own client: a stalled stream fails after 60 s, with no slow retries. */
+    private val geminiCode = GeminiClient(http.newBuilder().readTimeout(60, TimeUnit.SECONDS).build())
     private val openai = OpenAIClient(http)
     val voice = VoiceEngine(ctx)
     val launcher = AppLauncher(ctx)
@@ -403,6 +407,9 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     var codeChecks by mutableStateOf<List<String>>(emptyList()); private set
     var codeStartMs by mutableStateOf(0L); private set
     var codeEndMs by mutableStateOf(0L); private set
+    /** Folder with the last built website (for the in-app preview). */
+    var webDir by mutableStateOf<String?>(null); private set
+    var webPages by mutableStateOf<List<String>>(emptyList()); private set
 
     fun dismissCoding() { if (!codingBusy) codeStage = CodeStage.IDLE }
 
@@ -411,11 +418,11 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         val d = args.optString("description").trim()
         if (d.isBlank()) return "Tell me what the app should do."
         if (codingBusy) return "A coding task is already running. Wait for it to finish."
-        buildProject(d)
+        buildProject(d, web = Regex("website|web ?site|वेबसाइट|साइट", RegexOption.IGNORE_CASE).containsMatchIn(d))
         return "Started building the project. Watch the coding screen. The files will be saved to the Download folder."
     }
 
-    private fun buildProject(desc: String) {
+    private fun buildProject(desc: String, web: Boolean = false) {
         val project = ProjectBuilder.projectName(desc)
         codingBusy = true
         codingJob?.cancel()
@@ -425,7 +432,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         codingJob = viewModelScope.launch {
             val sb = StringBuilder()
             try {
-                codeFlow(ProjectPrompt.SYSTEM, listOf(ChatMessage(role = "user", text = desc))).collect { chunk ->
+                codeFlow(if (web) WebProjectPrompt.SYSTEM else ProjectPrompt.SYSTEM, listOf(ChatMessage(role = "user", text = desc))).collect { chunk ->
                     if (sb.isEmpty()) codeStage = CodeStage.WRITE
                     sb.append(chunk)
                     codeStream = sb.toString()
@@ -438,6 +445,17 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                 files.forEach { (path, body) ->
                     if (CodeCheck.balanced(body)) lines += "$path: brackets OK, ${body.lines().size} lines"
                     else { ok = false; lines += "$path: unbalanced brackets" }
+                }
+                if (web && files.isNotEmpty()) {
+                    val pages = files.filter { it.first.endsWith(".html") }
+                    val complete = pages.count { it.second.contains("<html") && it.second.contains("</html>") }
+                    if (pages.size >= 10 && complete == pages.size) lines += "Pages OK: ${pages.size} complete HTML pages"
+                    else { ok = false; lines += "Pages: ${pages.size} found, ${complete} complete. Need at least 10." }
+                    if (files.none { it.first == "style.css" }) { ok = false; lines += "style.css is missing" }
+                    val dir = File(ctx.filesDir, "webprojects/$project")
+                    files.forEach { (path, body) -> File(dir, path).apply { parentFile?.mkdirs(); writeText(body) } }
+                    webDir = dir.absolutePath
+                    webPages = pages.map { it.first }.sortedBy { if (it == "index.html") "" else it }
                 }
                 if (files.isNotEmpty()) {
                     val r = withContext(Dispatchers.IO) { ProjectSaver.saveProject(ctx, project, files) }
@@ -746,7 +764,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                 toast = "ChatGPT has no credits or quota left. Continuing with Gemini."
             }
         }
-        emitAll(gemini.stream(cfg(), system, hist))
+        emitAll(geminiCode.stream(cfg(), system, hist, null, 1))
     }
 
     fun saveApiKey(k: String) { secure.apiKey = k; hasKey = secure.apiKey.isNotBlank(); toast = if (hasKey) "API key saved securely." else "API key removed." }

@@ -38,6 +38,26 @@ Keep MainActivity.kt under about 300 lines. Write full file contents. Never use 
 """.trimIndent()
 }
 
+/** Static multi-page website: no backend, no database. */
+object WebProjectPrompt {
+    val SYSTEM = """
+You are the developer engine of ALIC AI. Build a complete STATIC multi-page website using only HTML, CSS and JavaScript.
+There must be NO backend, NO server code and NO database. Everything runs in the browser.
+Create AT LEAST 12 separate pages, for example: index.html, about.html, services.html, gallery.html, pricing.html, blog.html, contact.html, faq.html, team.html, testimonials.html, privacy.html, terms.html.
+Every page is a full HTML document starting with <!DOCTYPE html>, containing <html>, <head>, <body> and ending with </html>.
+Every page links "style.css" and "script.js" with relative paths, and has the same navigation bar with relative links such as href="about.html".
+Use a modern, responsive, dark design with real, meaningful content for the site's topic. Keep each page focused, about 60 to 90 lines.
+Start with one short sentence, then output every file in this exact format, and nothing else:
+
+### FILE: index.html
+```html
+...
+```
+
+Write full file contents. Never use placeholders, comments like "rest of code", or "...".
+""".trimIndent()
+}
+
 /** Reads "### FILE: path" headings followed by a fenced block from a Gemini reply. */
 object ProjectParser {
     private val rx = Regex("""(?m)^#{0,3}\s*(?:FILE|File):\s*`?([^\n`]+?)`?\s*\n+```[^\n]*\n([\s\S]*?)```""")

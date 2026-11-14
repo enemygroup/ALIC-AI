@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
+import com.alic.ai.R
 import com.alic.ai.data.ChatMessage
 import com.alic.ai.data.OrbState
 import com.alic.ai.service.AlicAccessibilityService
@@ -84,7 +86,7 @@ fun SplashScreen(ready: Boolean, onDone: () -> Unit) {
                     Modifier.size(170.dp).graphicsLayer { scaleX = glow.value; scaleY = glow.value; alpha = fade.value * 0.45f }
                         .clip(CircleShape).background(Brush.radialGradient(listOf(C.Neon.copy(alpha = 0.55f), Color.Transparent)))
                 )
-                Box(Modifier.graphicsLayer { alpha = fade.value }) { LogoMark(96.dp) }
+                Image(painterResource(R.drawable.alic_logo), "ALIC AI logo", Modifier.size(150.dp).graphicsLayer { alpha = fade.value }.clip(CircleShape))
             }
             Spacer(Modifier.height(18.dp))
             Text("ALIC AI", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = C.Text, letterSpacing = 6.sp, modifier = Modifier.graphicsLayer { alpha = fade.value })
@@ -124,7 +126,7 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
     Column(Modifier.fillMaxSize().background(screenBg()).padding(horizontal = 16.dp)) {
         // Header: logo, online status, profile and settings shortcuts
         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
-            LogoMark(34.dp)
+            Image(painterResource(R.drawable.alic_logo), "ALIC AI logo", Modifier.size(38.dp).clip(CircleShape))
             Spacer(Modifier.width(10.dp))
             Column {
                 Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)

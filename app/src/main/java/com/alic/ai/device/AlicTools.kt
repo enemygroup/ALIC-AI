@@ -76,7 +76,7 @@ object AlicTools {
             Triple("title", "STRING", "Event title"), Triple("start", "STRING", "Local start date-time like 2026-11-20T18:30"),
             Triple("duration_minutes", "INTEGER", "Length in minutes"), Triple("location", "STRING", "Optional place"),
             required = listOf("title", "start")))
-        .put(fn("create_app_project", "Create a complete app or coding project from a description (for example a calendar app in Kotlin). The coding screen shows progress and all files are saved to the Download folder. Use it when the user asks to build, code, create or make an app, website or project.",
+        .put(fn("create_app_project", "Create a complete app or coding project from a description (for example a calendar app in Kotlin). The coding screen shows progress and all files are saved to the Download folder. Use it when the user asks to build, code, create or make an app, website or project. For websites, the user will see a preview on screen.",
             Triple("description", "STRING", "What the app or project should do, in the user's words"), required = listOf("description")))
         .put(fn("get_time", "Get the current date and time on the phone."))
 }

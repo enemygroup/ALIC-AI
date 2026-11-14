@@ -81,7 +81,7 @@ class GeminiClient(private val http: OkHttpClient) {
     }
 
     /** Streams raw parts. Retries transient failures before any output is produced. */
-    fun streamParts(cfg: ApiConfig, system: String, contents: JSONArray, tools: JSONArray? = null, grounding: Boolean = false): Flow<JSONObject> = flow {
+    fun streamParts(cfg: ApiConfig, system: String, contents: JSONArray, tools: JSONArray? = null, grounding: Boolean = false, maxAttempts: Int = 3): Flow<JSONObject> = flow {
         if (cfg.apiKey.isBlank() && cfg.baseUrl.contains("googleapis.com")) {
             throw GeminiException("No Gemini API key. Open Settings > Gemini API configuration.")
         }
@@ -114,9 +114,9 @@ class GeminiClient(private val http: OkHttpClient) {
                 }
                 return@flow
             } catch (e: GeminiException) {
-                if (!emitted && e.code in listOf(429, 500, 502, 503, 504) && attempt < 3) delay(1500L * attempt) else throw e
+                if (!emitted && e.code in listOf(429, 500, 502, 503, 504) && attempt < maxAttempts) delay(1500L * attempt) else throw e
             } catch (e: IOException) {
-                if (!emitted && attempt < 3 && !call.isCanceled()) delay(1500L * attempt) else throw e
+                if (!emitted && attempt < maxAttempts && !call.isCanceled()) delay(1500L * attempt) else throw e
             } finally {
                 handle.dispose()
             }
@@ -124,8 +124,8 @@ class GeminiClient(private val http: OkHttpClient) {
     }.flowOn(Dispatchers.IO)
 
     /** Plain text streaming (used by Coding Studio and Vision). */
-    fun stream(cfg: ApiConfig, system: String, history: List<ChatMessage>, image: ImageData? = null): Flow<String> =
-        streamParts(cfg, system, contentsOf(history, image))
+    fun stream(cfg: ApiConfig, system: String, history: List<ChatMessage>, image: ImageData? = null, maxAttempts: Int = 3): Flow<String> =
+        streamParts(cfg, system, contentsOf(history, image), maxAttempts = maxAttempts)
             .map { it.optString("text", "") }
             .filter { it.isNotEmpty() }
 
