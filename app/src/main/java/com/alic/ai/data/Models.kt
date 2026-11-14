@@ -57,6 +57,8 @@ data class AppSettings(
     val persona: String = "ultron",          // eden, ultron, edait, rtk, ragan, custom
     val userName: String = "",
     val imageModel: String = "gemini-2.5-flash-image",
+    val codingProvider: String = "openai",   // openai (ChatGPT) or gemini
+    val openaiModel: String = "gpt-4o",
     val clapEnabled: Boolean = false,
     val clapMode: String = "double",         // single, double
     val clapSensitivity: String = "medium"   // low, medium, high     // aurora, red, cyan, blue, purple

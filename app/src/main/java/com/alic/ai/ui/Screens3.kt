@@ -141,6 +141,9 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
                 vm.testResult?.let { Text(it, color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
 
+            SectionTitle("CODING ENGINE")
+            CodingEngineCard(vm)
+
             SectionTitle("BACKEND PROXY (OPTIONAL)")
             GlassCard(Modifier.fillMaxWidth()) {
                 OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("API base URL") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
@@ -161,3 +164,42 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
     }
 }
 
+
+@Composable
+private fun CodingEngineCard(vm: AlicViewModel) {
+    val s = vm.settings
+    var key by remember { mutableStateOf("") }
+    var model by remember(s.openaiModel) { mutableStateOf(s.openaiModel) }
+    GlassCard(Modifier.fillMaxWidth()) {
+        Text("Used by Coding Studio, the project builder and voice project requests.", color = C.Sub, fontSize = 12.sp)
+        Spacer(Modifier.height(8.dp))
+        ChipsRow(listOf("openai" to "ChatGPT (OpenAI)", "gemini" to "Gemini"), s.codingProvider) { v ->
+            vm.updateSettings { it.copy(codingProvider = v) }
+        }
+        Text(
+            if (vm.hasOpenAIKey) "OpenAI key: saved" else "OpenAI key: not set",
+            color = if (vm.hasOpenAIKey) Color(0xFF2ECC71) else C.Err, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
+        )
+        OutlinedTextField(
+            key, { key = it }, label = { Text("OpenAI API key (sk-...)") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(),
+            colors = fieldColors(), shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RedButton("Save key", { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveOpenAIKey(key); key = "" } }, Modifier.weight(1f))
+            GhostButton("Remove", { vm.saveOpenAIKey("") }, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            model, { model = it }, label = { Text("OpenAI model") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        GhostButton("Save model", {
+            vm.updateSettings { it.copy(openaiModel = model.trim().ifBlank { "gpt-4o" }) }
+            vm.toast = "Model saved."
+        }, Modifier.fillMaxWidth())
+        Text("Keys are stored encrypted on this phone. Create a key at platform.openai.com. Usage is billed by OpenAI.", color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+}

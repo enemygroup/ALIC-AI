@@ -38,6 +38,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import okhttp3.OkHttpClient
 import org.json.JSONArray
@@ -57,6 +58,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS).readTimeout(90, TimeUnit.SECONDS).build()
     private val gemini = GeminiClient(http)
+    private val openai = OpenAIClient(http)
     val voice = VoiceEngine(ctx)
     val launcher = AppLauncher(ctx)
     private val tools = ToolExecutor(ctx, launcher)
@@ -67,6 +69,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     var settings by mutableStateOf(AppSettings()); private set
     var settingsLoaded by mutableStateOf(false); private set
     var hasKey by mutableStateOf(secure.apiKey.isNotBlank()); private set
+    var hasOpenAIKey by mutableStateOf(secure.openaiKey.isNotBlank()); private set
     val secureStorageAvailable get() = secure.secureStorageAvailable
     private var chatOrb by mutableStateOf(OrbState.IDLE)
     private var chatLevel by mutableStateOf(0f)
@@ -420,7 +423,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         codingJob = viewModelScope.launch {
             val sb = StringBuilder()
             try {
-                gemini.stream(cfg(), ProjectPrompt.SYSTEM, listOf(ChatMessage(role = "user", text = desc))).collect { chunk ->
+                codeFlow(ProjectPrompt.SYSTEM, listOf(ChatMessage(role = "user", text = desc))).collect { chunk ->
                     if (sb.isEmpty()) codeStage = CodeStage.WRITE
                     sb.append(chunk)
                     codeStream = sb.toString()
@@ -467,8 +470,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         codingJob = viewModelScope.launch {
             val sb = StringBuilder()
             try {
-                gemini.stream(
-                    cfg(),
+                codeFlow(
                     systemPrompt("\nYou are in ALIC Coding Studio. Give complete, correct, runnable code in fenced blocks with the language tag, then a brief explanation. When debugging, find the root cause first. You never execute code; say so if asked to run it."),
                     hist
                 ).collect { chunk ->
@@ -713,6 +715,23 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun currentKeyHint(): String { val k = secure.apiKey; return if (k.length > 8) k.take(4) + "••••" + k.takeLast(4) else if (k.isNotEmpty()) "••••" else "" }
+
+    fun saveOpenAIKey(k: String) {
+        secure.openaiKey = k
+        hasOpenAIKey = secure.openaiKey.isNotBlank()
+        toast = if (hasOpenAIKey) "OpenAI key saved securely." else "OpenAI key removed."
+    }
+
+    /** Coding engine: ChatGPT when selected and a key exists, otherwise Gemini. */
+    private fun codeFlow(system: String, hist: List<ChatMessage>): Flow<String> {
+        val st = settings
+        if (st.codingProvider == "openai") {
+            val key = secure.openaiKey
+            if (key.isNotBlank()) return openai.stream(key, st.openaiModel, system, hist)
+            toast = "No OpenAI key saved. Using Gemini for coding."
+        }
+        return gemini.stream(cfg(), system, hist)
+    }
 
     fun saveApiKey(k: String) { secure.apiKey = k; hasKey = secure.apiKey.isNotBlank(); toast = if (hasKey) "API key saved securely." else "API key removed." }
 

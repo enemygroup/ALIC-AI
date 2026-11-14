@@ -47,6 +47,8 @@ class SettingsStore(private val ctx: Context) {
         val clapEnabled = booleanPreferencesKey("clap_enabled")
         val clapMode = stringPreferencesKey("clap_mode")
         val clapSens = stringPreferencesKey("clap_sensitivity")
+        val codingProv = stringPreferencesKey("coding_provider")
+        val openaiModel = stringPreferencesKey("openai_model")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -85,7 +87,9 @@ class SettingsStore(private val ctx: Context) {
             imageModel = p[K.imageModel] ?: d.imageModel,
             clapEnabled = p[K.clapEnabled] ?: d.clapEnabled,
             clapMode = p[K.clapMode] ?: d.clapMode,
-            clapSensitivity = p[K.clapSens] ?: d.clapSensitivity
+            clapSensitivity = p[K.clapSens] ?: d.clapSensitivity,
+            codingProvider = p[K.codingProv] ?: d.codingProvider,
+            openaiModel = p[K.openaiModel] ?: d.openaiModel
         )
     }
 
@@ -105,7 +109,7 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
             p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
-            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity
+            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel
         }
     }
 }
@@ -128,6 +132,14 @@ class SecureStore(ctx: Context) {
         get() = prefs?.getString("gemini_key", "") ?: memoryOnly
         set(v) {
             if (prefs != null) prefs.edit().putString("gemini_key", v.trim()).apply() else memoryOnly = v.trim()
+        }
+
+    private var memoryOnlyOpenAI: String = ""
+
+    var openaiKey: String
+        get() = prefs?.getString("openai_key", "") ?: memoryOnlyOpenAI
+        set(v) {
+            if (prefs != null) prefs.edit().putString("openai_key", v.trim()).apply() else memoryOnlyOpenAI = v.trim()
         }
 
     val secureStorageAvailable: Boolean get() = prefs != null
