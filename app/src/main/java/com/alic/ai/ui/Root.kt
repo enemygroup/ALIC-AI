@@ -112,6 +112,8 @@ fun AlicRoot(vm: AlicViewModel) {
         }
     }
 
+    if (vm.codeStage != CodeStage.IDLE) CodingOverlay(vm)
+
     vm.pendingCommand?.let { c ->
         AlertDialog(
             onDismissRequest = { vm.confirmCommand(false) }, containerColor = C.Card,

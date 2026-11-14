@@ -54,6 +54,8 @@ object LiveSessionController {
     var lastError by mutableStateOf<String?>(null)
 
     @Volatile var owner: String? = null; private set
+    /** Set by AlicViewModel: starts a project build from a voice tool call. */
+    @Volatile var projectHook: ((org.json.JSONObject) -> String)? = null
     @Volatile var settings: AppSettings = AppSettings(); private set
 
     val orb: OrbState
@@ -125,7 +127,10 @@ object LiveSessionController {
             LiveConfig(
                 secure.apiKey, settings.baseUrl, settings.liveModel, settings.liveVoice,
                 Prompts.system(settings, Prompts.VOICE_HINT + CallMonitor.hint()), AlicTools.declarations()
-            ) { name, args -> tools.run(name, args) }
+            ) { name, args ->
+                if (name == "create_app_project") projectHook?.invoke(args) ?: "Project builder is not ready."
+                else tools.run(name, args)
+            }
         )
         ticker?.cancel()
         ticker = scope.launch {

@@ -22,6 +22,10 @@ import androidx.lifecycle.viewModelScope
 import com.alic.ai.data.*
 import com.alic.ai.device.AppInfo
 import com.alic.ai.device.AlicTools
+import com.alic.ai.build.ProjectBuilder
+import com.alic.ai.build.ProjectParser
+import com.alic.ai.build.ProjectPrompt
+import com.alic.ai.build.ProjectSaver
 import com.alic.ai.device.AppLauncher
 import com.alic.ai.device.ToolExecutor
 import com.alic.ai.device.Command
@@ -115,6 +119,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     init {
         voice.init()
         loadAvatar()
+        LiveSessionController.projectHook = { a -> startProject(a) }
         online = cm.activeNetwork != null
         try { cm.registerDefaultNetworkCallback(netCb, Handler(Looper.getMainLooper())) } catch (e: Exception) {}
         viewModelScope.launch { settingsStore.flow.collect { settings = it; ThemeState.apply(it.themeMode, it.accent); settingsLoaded = true } }
@@ -133,6 +138,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        LiveSessionController.projectHook = null
         try { cm.unregisterNetworkCallback(netCb) } catch (e: Exception) {}
         LiveSessionController.stop(ifOwner = LiveSessionController.OWNER_APP)
         voice.shutdown()
@@ -215,7 +221,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                     contents.put(JSONObject().put("role", "model").put("parts", modelParts))
                     val responses = JSONArray()
                     for ((name, args) in calls) {
-                        val result = tools.run(name, args)
+                        val result = if (name == "create_app_project") startProject(args) else tools.run(name, args)
                         sb.append("⚙️ ").append(result).append("\n\n")
                         replaceLast(sb.toString())
                         responses.put(
@@ -387,11 +393,77 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         runCoding()
     }
 
+    var codeStage by mutableStateOf(CodeStage.IDLE); private set
+    var codeStream by mutableStateOf(""); private set
+    var codeChecks by mutableStateOf<List<String>>(emptyList()); private set
+    var codeStartMs by mutableStateOf(0L); private set
+    var codeEndMs by mutableStateOf(0L); private set
+
+    fun dismissCoding() { if (!codingBusy) codeStage = CodeStage.IDLE }
+
+    /** Called by the Live tool and the chat tool loop. Returns at once; the work runs in the background. */
+    fun startProject(args: JSONObject): String {
+        val d = args.optString("description").trim()
+        if (d.isBlank()) return "Tell me what the app should do."
+        if (codingBusy) return "A coding task is already running. Wait for it to finish."
+        buildProject(d)
+        return "Started building the project. Watch the coding screen. The files will be saved to the Download folder."
+    }
+
+    private fun buildProject(desc: String) {
+        val project = ProjectBuilder.projectName(desc)
+        codingBusy = true
+        codingJob?.cancel()
+        codeStage = CodeStage.UNDERSTAND
+        codeStream = ""; codeChecks = emptyList()
+        codeStartMs = System.currentTimeMillis(); codeEndMs = 0L
+        codingJob = viewModelScope.launch {
+            val sb = StringBuilder()
+            try {
+                gemini.stream(cfg(), ProjectPrompt.SYSTEM, gemini.contentsOf(listOf(ChatMessage(role = "user", text = desc)))).collect { chunk ->
+                    if (sb.isEmpty()) codeStage = CodeStage.WRITE
+                    sb.append(chunk)
+                    codeStream = sb.toString()
+                }
+                codeStage = CodeStage.VALIDATE
+                val files = ProjectParser.parse(sb.toString())
+                val lines = mutableListOf<String>()
+                var ok = files.isNotEmpty()
+                if (files.isEmpty()) lines += "No project files were found in the reply (it may be cut off)."
+                files.forEach { (path, body) ->
+                    if (CodeCheck.balanced(body)) lines += "$path: brackets OK, ${body.lines().size} lines"
+                    else { ok = false; lines += "$path: unbalanced brackets" }
+                }
+                if (files.isNotEmpty()) {
+                    val r = withContext(Dispatchers.IO) { ProjectSaver.saveProject(ctx, project, files) }
+                    lines += "Saved ${r.saved} files to Download/ALIC_AI/$project/"
+                    if (r.zipPath != null) lines += "ZIP: ${r.zipPath} (${r.zipBytes} bytes)"
+                    else { ok = false; lines += "ZIP could not be saved." }
+                    if (r.failed > 0) { ok = false; lines += "${r.failed} files could not be saved." }
+                }
+                codeChecks = lines
+                codeStage = if (ok) CodeStage.DONE else CodeStage.ERROR
+            } catch (e: CancellationException) {
+                codeStage = CodeStage.IDLE
+                throw e
+            } catch (e: Exception) {
+                val m = friendly(e); toast = m
+                codeChecks = listOf("Request failed: $m")
+                codeStage = CodeStage.ERROR
+            }
+            codeEndMs = System.currentTimeMillis()
+            codingBusy = false
+        }
+    }
+
     private fun runCoding() {
         val hist = coding
         coding = coding + ChatMessage(role = "model", text = "")
         codingBusy = true
         codingJob?.cancel()
+        codeStage = CodeStage.UNDERSTAND
+        codeStream = ""; codeChecks = emptyList()
+        codeStartMs = System.currentTimeMillis(); codeEndMs = 0L
         codingJob = viewModelScope.launch {
             val sb = StringBuilder()
             try {
@@ -399,20 +471,33 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                     cfg(),
                     systemPrompt("\nYou are in ALIC Coding Studio. Give complete, correct, runnable code in fenced blocks with the language tag, then a brief explanation. When debugging, find the root cause first. You never execute code; say so if asked to run it."),
                     hist
-                ).collect { sb.append(it); coding = coding.dropLast(1) + coding.last().copy(text = sb.toString()) }
+                ).collect { chunk ->
+                    if (sb.isEmpty()) codeStage = CodeStage.WRITE
+                    sb.append(chunk)
+                    codeStream = sb.toString()
+                    coding = coding.dropLast(1) + coding.last().copy(text = sb.toString())
+                }
+                codeStage = CodeStage.VALIDATE
+                val (ok, lines) = CodeCheck.run(sb.toString())
+                codeChecks = lines
+                codeStage = if (ok) CodeStage.DONE else CodeStage.ERROR
             } catch (e: CancellationException) {
+                codeStage = CodeStage.IDLE
                 throw e
             } catch (e: Exception) {
                 val m = friendly(e); toast = m
                 coding = coding.dropLast(1) + coding.last().copy(text = (if (sb.isEmpty()) "" else sb.toString() + "\n\n") + "⚠️ $m")
+                codeChecks = listOf("Request failed: $m")
+                codeStage = CodeStage.ERROR
             }
+            codeEndMs = System.currentTimeMillis()
             codingBusy = false
             val clean = coding.filter { it.text.isNotBlank() }
             if (clean.isNotEmpty()) saveConversation(Conversation(codingId, "Code: " + clean.first().text.lines().getOrElse(1) { "session" }.take(32), System.currentTimeMillis(), clean))
         }
     }
 
-    fun codingClear() { codingJob?.cancel(); codingBusy = false; coding = emptyList(); codingId = UUID.randomUUID().toString() }
+    fun codingClear() { codingJob?.cancel(); codingBusy = false; codeStage = CodeStage.IDLE; coding = emptyList(); codingId = UUID.randomUUID().toString() }
 
     // ---------- vision ----------
     fun loadImage(uri: Uri) {
