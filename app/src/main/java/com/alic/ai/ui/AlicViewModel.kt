@@ -420,7 +420,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         codingJob = viewModelScope.launch {
             val sb = StringBuilder()
             try {
-                gemini.stream(cfg(), ProjectPrompt.SYSTEM, gemini.contentsOf(listOf(ChatMessage(role = "user", text = desc)))).collect { chunk ->
+                gemini.stream(cfg(), ProjectPrompt.SYSTEM, listOf(ChatMessage(role = "user", text = desc))).collect { chunk ->
                     if (sb.isEmpty()) codeStage = CodeStage.WRITE
                     sb.append(chunk)
                     codeStream = sb.toString()
