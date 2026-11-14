@@ -22,10 +22,10 @@ import androidx.lifecycle.viewModelScope
 import com.alic.ai.data.*
 import com.alic.ai.device.AppInfo
 import com.alic.ai.device.AlicTools
-import com.alic.ai.build.ProjectBuilder
-import com.alic.ai.build.ProjectParser
-import com.alic.ai.build.ProjectPrompt
-import com.alic.ai.build.ProjectSaver
+import com.alic.ai.projectbuild.ProjectBuilder
+import com.alic.ai.projectbuild.ProjectParser
+import com.alic.ai.projectbuild.ProjectPrompt
+import com.alic.ai.projectbuild.ProjectSaver
 import com.alic.ai.device.AppLauncher
 import com.alic.ai.device.ToolExecutor
 import com.alic.ai.device.Command
