@@ -127,7 +127,6 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         voice.init()
-        loadAvatar()
         LiveSessionController.projectHook = { a -> startProject(a) }
         online = cm.activeNetwork != null
         try { cm.registerDefaultNetworkCallback(netCb, Handler(Looper.getMainLooper())) } catch (e: Exception) {}

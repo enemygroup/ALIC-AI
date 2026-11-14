@@ -250,6 +250,7 @@ fun ProfileScreen(vm: AlicViewModel, nav: NavController) {
     val ctx = LocalContext.current
     val s = vm.settings
     var editName by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vm.loadAvatar() }
     var nameDraft by remember(s.userName) { mutableStateOf(s.userName) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? -> if (uri != null) vm.setAvatar(uri) }
     Column(Modifier.fillMaxSize().background(screenBg())) {
