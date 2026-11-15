@@ -141,9 +141,6 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
                 vm.testResult?.let { Text(it, color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
 
-            SectionTitle("CODING ENGINE")
-            CodingEngineCard(vm)
-
             SectionTitle("BACKEND PROXY (OPTIONAL)")
             GlassCard(Modifier.fillMaxWidth()) {
                 OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("API base URL") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))

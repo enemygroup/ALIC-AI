@@ -39,6 +39,7 @@ import androidx.compose.ui.res.painterResource
 import com.alic.ai.R
 import com.alic.ai.data.ChatMessage
 import com.alic.ai.data.OrbState
+import com.alic.ai.emotion.Mood
 import com.alic.ai.service.AlicAccessibilityService
 import com.alic.ai.wake.WakeWordService
 import kotlinx.coroutines.delay
@@ -81,13 +82,6 @@ fun SplashScreen(ready: Boolean, onDone: () -> Unit) {
     Box(Modifier.fillMaxSize().background(screenBg())) {
         Particles()
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(contentAlignment = Alignment.Center) {
-                Box(
-                    Modifier.size(170.dp).graphicsLayer { scaleX = glow.value; scaleY = glow.value; alpha = fade.value * 0.45f }
-                        .clip(CircleShape).background(Brush.radialGradient(listOf(C.Neon.copy(alpha = 0.55f), Color.Transparent)))
-                )
-                Image(painterResource(R.drawable.alic_logo), "ALIC AI logo", Modifier.size(150.dp).graphicsLayer { alpha = fade.value }.clip(CircleShape))
-            }
             Spacer(Modifier.height(18.dp))
             Text("ALIC AI", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = C.Text, letterSpacing = 6.sp, modifier = Modifier.graphicsLayer { alpha = fade.value })
             Spacer(Modifier.height(6.dp))
@@ -126,7 +120,6 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
     Column(Modifier.fillMaxSize().background(screenBg()).padding(horizontal = 16.dp)) {
         // Header: logo, online status, profile and settings shortcuts
         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(R.drawable.alic_logo), "ALIC AI logo", Modifier.size(38.dp).clip(CircleShape))
             Spacer(Modifier.width(10.dp))
             Column {
                 Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
@@ -164,6 +157,7 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
             LevelWave(vm.level, active = vm.liveActive && !vm.liveMuted)
             Spacer(Modifier.height(6.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (vm.mood != Mood.NEUTRAL && vm.settings.emotionAware) StatusPill("Mood (estimate): ${vm.mood.label}", true)
                 StatusPill(if (vm.hasKey) "Gemini ready" else "Add API key", vm.hasKey) { nav.navigate("aiconfig") }
                 StatusPill(if (s.wakeEnabled || s.clapEnabled) "Wake-up on" else "Wake-up off", s.wakeEnabled || s.clapEnabled) { nav.navigate("wake") }
                 StatusPill(if (accessibilityOn) "Accessibility on" else "Accessibility off", accessibilityOn) { nav.navigate("permissions") }
@@ -220,8 +214,6 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
     }
     Column(Modifier.fillMaxSize().background(screenBg())) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-            LogoMark(32.dp)
-            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -315,7 +307,7 @@ fun Bubble(m: ChatMessage, isLast: Boolean, busy: Boolean, onCopy: () -> Unit, o
     } else {
         val failed = m.text.startsWith("⚠️")
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(34.dp).clip(CircleShape).border(1.dp, glowBrush(), CircleShape), contentAlignment = Alignment.Center) { LogoMark(20.dp) }
+            Box(Modifier.size(34.dp).clip(CircleShape).background(C.Red), contentAlignment = Alignment.Center) { Text("A", color = C.OnPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f, fill = false)) {
                 val shape = RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp)

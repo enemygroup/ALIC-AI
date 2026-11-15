@@ -128,8 +128,7 @@ object LiveSessionController {
                 secure.apiKey, settings.baseUrl, settings.liveModel, settings.liveVoice,
                 Prompts.system(settings, Prompts.VOICE_HINT + CallMonitor.hint()), AlicTools.declarations()
             ) { name, args ->
-                if (name == "create_app_project") projectHook?.invoke(args) ?: "Project builder is not ready."
-                else tools.run(name, args)
+                tools.run(name, args)
             }
         )
         ticker?.cancel()

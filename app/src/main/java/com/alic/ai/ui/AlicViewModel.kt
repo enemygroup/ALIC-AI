@@ -23,6 +23,8 @@ import com.alic.ai.data.*
 import com.alic.ai.device.AppInfo
 import com.alic.ai.device.AlicTools
 import com.alic.ai.projectbuild.ProjectBuilder
+import com.alic.ai.emotion.EmotionEngine
+import com.alic.ai.emotion.Mood
 import com.alic.ai.projectbuild.WebProjectPrompt
 import com.alic.ai.projectbuild.ProjectParser
 import com.alic.ai.projectbuild.ProjectPrompt
@@ -90,6 +92,8 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     var messages by mutableStateOf<List<ChatMessage>>(emptyList()); private set
     var conversations by mutableStateOf<List<Conversation>>(emptyList()); private set
     var busy by mutableStateOf(false); private set
+    /** Estimate from the last user message (text only). Shown as "estimate", never as fact. */
+    var mood by mutableStateOf(Mood.NEUTRAL); private set
     private var convId = UUID.randomUUID().toString()
     private var convCreated = System.currentTimeMillis()
     private var job: Job? = null
@@ -203,6 +207,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun ask() {
         job?.cancel()
+        mood = if (settings.emotionAware) EmotionEngine.estimate(messages.lastOrNull { it.isUser }?.text.orEmpty()) else Mood.NEUTRAL
         busy = true; chatOrb = OrbState.THINKING
         val hist = messages
         messages = messages + ChatMessage(role = "model", text = "")
@@ -214,7 +219,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                 while (true) {
                     val modelParts = JSONArray()
                     val calls = mutableListOf<Pair<String, JSONObject>>()
-                    gemini.streamParts(cfg(), systemPrompt(), contents, AlicTools.declarations()).collect { part ->
+                    gemini.streamParts(cfg(), systemPrompt(EmotionEngine.context(mood)), contents, AlicTools.declarations()).collect { part ->
                         modelParts.put(part)
                         val fc = part.optJSONObject("functionCall")
                         if (fc != null) {
@@ -229,7 +234,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                     contents.put(JSONObject().put("role", "model").put("parts", modelParts))
                     val responses = JSONArray()
                     for ((name, args) in calls) {
-                        val result = if (name == "create_app_project") startProject(args) else tools.run(name, args)
+                        val result = tools.run(name, args)
                         sb.append("⚙️ ").append(result).append("\n\n")
                         replaceLast(sb.toString())
                         responses.put(
@@ -264,7 +269,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     fun speakMessage(text: String) {
         stopAll()
         chatOrb = OrbState.SPEAKING
-        voice.speak(text, settings) { chatOrb = OrbState.IDLE }
+        voice.speak(text, EmotionEngine.voiceFor(mood, settings)) { chatOrb = OrbState.IDLE }
     }
 
     /** Stops speaking and any in-flight generation. */

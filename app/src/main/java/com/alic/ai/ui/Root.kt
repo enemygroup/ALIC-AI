@@ -104,15 +104,12 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("websearch") { WebSearchScreen(vm, nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
-            composable("coding") { CodingScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }
             composable("youtube") { YouTubeScreen(vm, nav) }
             composable("apps") { AppsScreen(vm, nav) }
             composable("live") { LiveScreen(vm, nav) }
         }
     }
-
-    if (vm.codeStage != CodeStage.IDLE) CodingOverlay(vm)
 
     vm.pendingCommand?.let { c ->
         AlertDialog(

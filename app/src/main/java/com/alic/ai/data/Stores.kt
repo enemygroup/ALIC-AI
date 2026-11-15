@@ -49,6 +49,7 @@ class SettingsStore(private val ctx: Context) {
         val clapSens = stringPreferencesKey("clap_sensitivity")
         val codingProv = stringPreferencesKey("coding_provider")
         val openaiModel = stringPreferencesKey("openai_model")
+        val emotion = booleanPreferencesKey("emotion_aware")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -89,7 +90,8 @@ class SettingsStore(private val ctx: Context) {
             clapMode = p[K.clapMode] ?: d.clapMode,
             clapSensitivity = p[K.clapSens] ?: d.clapSensitivity,
             codingProvider = p[K.codingProv] ?: d.codingProvider,
-            openaiModel = p[K.openaiModel] ?: d.openaiModel
+            openaiModel = p[K.openaiModel] ?: d.openaiModel,
+            emotionAware = p[K.emotion] ?: d.emotionAware
         )
     }
 
@@ -109,7 +111,7 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
             p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
-            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel
+            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel; p[K.emotion] = s.emotionAware
         }
     }
 }

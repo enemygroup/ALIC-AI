@@ -149,7 +149,6 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         T("Web Search", "Answers from Google", Icons.Filled.Search, "websearch"),
         T("Image Generator", "Create images from text", Icons.Filled.Image, "imagegen"),
         T("File Assistant", "Ask about a file", Icons.Filled.AttachFile, "fileassist"),
-        T("Coding Studio", "Generate and debug code", Icons.Filled.Code, "coding"),
         T("AI Vision", "Camera and gallery questions", Icons.Filled.CameraAlt, "vision"),
         T("YouTube & Music", "Search videos and songs", Icons.Filled.PlayArrow, "youtube"),
         T("Apps", "Open installed apps", Icons.Filled.Apps, "apps"),
@@ -306,6 +305,9 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
                 Switch(s.memoryEnabled, { v -> vm.updateSettings { it.copy(memoryEnabled = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
             ListRow(Icons.Filled.History, "Conversation history", "${vm.conversations.size} saved", onClick = { nav.navigate("history") })
+            ListRow(Icons.Filled.Favorite, "Emotion-aware replies", if (s.emotionAware) "On: tone adapts to your words (estimate, text only)" else "Off") {
+                Switch(s.emotionAware, { v -> vm.updateSettings { it.copy(emotionAware = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
+            }
 
             SectionTitle("VOICE")
             ListRow(Icons.Filled.RecordVoiceOver, "Assistant persona", "${persona.name} · ${persona.gender} · ${persona.tags}", onClick = { personaDialog = true })
@@ -421,7 +423,6 @@ fun PopupPreview() {
     val t = rememberInfiniteTransition(label = "pp").animateFloat(0f, 1f, infiniteRepeatable(tween(1600)), label = "ppv")
     NeoCard(Modifier.fillMaxWidth().graphicsLayer { alpha = 0.95f + 0.05f * t.value }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            LogoMark(40.dp)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text("ALIC AI", color = C.Text, fontWeight = FontWeight.Bold)
