@@ -291,8 +291,6 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
     val s = vm.settings
     val ctx = LocalContext.current
     var wipe by remember { mutableStateOf(false) }
-    var voiceDialog by remember { mutableStateOf(false) }
-    var personaDialog by remember { mutableStateOf(false) }
     var doc by remember { mutableStateOf<String?>(null) }
     val persona = Personas.byId(s.persona)
     Column(Modifier.fillMaxSize().background(screenBg())) {
@@ -305,13 +303,9 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
                 Switch(s.memoryEnabled, { v -> vm.updateSettings { it.copy(memoryEnabled = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
             ListRow(Icons.Filled.History, "Conversation history", "${vm.conversations.size} saved", onClick = { nav.navigate("history") })
-            ListRow(Icons.Filled.Favorite, "Emotion-aware replies", if (s.emotionAware) "On: tone adapts to your words (estimate, text only)" else "Off") {
-                Switch(s.emotionAware, { v -> vm.updateSettings { it.copy(emotionAware = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
-            }
-
             SectionTitle("VOICE")
-            ListRow(Icons.Filled.RecordVoiceOver, "Assistant persona", "${persona.name} · ${persona.gender} · ${persona.tags}", onClick = { personaDialog = true })
-            ListRow(Icons.Filled.GraphicEq, "Voice", s.liveVoice.ifBlank { "Default" }, onClick = { voiceDialog = true })
+            ListRow(Icons.Filled.RecordVoiceOver, "Assistant persona", "ULTRON · Deep, powerful male voice (fixed)")
+            ListRow(Icons.Filled.GraphicEq, "Voice", "Charon (deep male, fixed)")
             ListRow(Icons.Filled.Campaign, "Voice interruption", if (s.voiceInterruption) "On: you can interrupt ALIC" else "Off: mic is muted while ALIC speaks") {
                 Switch(s.voiceInterruption, { v -> vm.updateSettings { it.copy(voiceInterruption = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
@@ -359,38 +353,6 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
         }
     }
 
-    if (personaDialog) AlertDialog(
-        onDismissRequest = { personaDialog = false }, containerColor = C.Card,
-        title = { Text("Assistant persona", color = C.Text) },
-        text = {
-            LazyColumn(Modifier.heightIn(max = 420.dp)) {
-                items(Personas.all) { p ->
-                    NeoCard(Modifier.fillMaxWidth().padding(bottom = 8.dp), selected = s.persona == p.id, onClick = { vm.selectPersona(p.id); personaDialog = false }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Avatar(p.name, 40.dp)
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(p.name, color = C.Text, fontWeight = FontWeight.SemiBold)
-                                Text("${p.gender} · ${p.tags}", color = C.Sub, fontSize = 12.sp)
-                            }
-                            if (s.persona == p.id) Icon(Icons.Filled.CheckCircle, null, tint = C.Neon)
-                        }
-                    }
-                }
-                item {
-                    Text("Custom voice", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp, bottom = 6.dp))
-                    ChipsRow(Personas.voices.map { it to it }, s.liveVoice) { v -> vm.selectCustomVoice(v); personaDialog = false }
-                }
-            }
-        },
-        confirmButton = { TextButton({ personaDialog = false }) { Text("Close", color = C.Sub) } }
-    )
-    if (voiceDialog) AlertDialog(
-        onDismissRequest = { voiceDialog = false }, containerColor = C.Card,
-        title = { Text("Gemini voice", color = C.Text) },
-        text = { ChipsRow(Personas.voices.map { it to it }, s.liveVoice) { v -> vm.selectCustomVoice(v); voiceDialog = false } },
-        confirmButton = { TextButton({ voiceDialog = false }) { Text("Close", color = C.Sub) } }
-    )
     if (wipe) AlertDialog(
         onDismissRequest = { wipe = false }, containerColor = C.Card,
         title = { Text("Delete all my data?", color = C.Text) },

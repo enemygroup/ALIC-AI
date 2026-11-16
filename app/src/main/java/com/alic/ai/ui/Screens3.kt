@@ -117,9 +117,6 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
                 OutlinedTextField(model, { model = it }, label = { Text("Chat model") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(liveModel, { liveModel = it }, label = { Text("Live model (Gemini Live API)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
-                Text("Live voice", color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp))
-                ChipsRow(listOf("Charon", "Orus", "Fenrir", "Puck", "Kore").map { it to it }, s.liveVoice) { v -> vm.updateSettings { it.copy(liveVoice = v) } }
-                Text("Charon, Orus, Fenrir and Puck are male Gemini voices.", color = C.Sub, fontSize = 11.sp)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     RedButton("Save models", { vm.updateSettings { it.copy(model = model.trim().ifBlank { it.model }, liveModel = liveModel.trim().ifBlank { it.liveModel }) }; vm.toast = "Models saved." }, Modifier.weight(1f))
@@ -140,6 +137,9 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
                 RedButton(if (vm.testBusy) "Testing…" else "Test connection", { vm.testApi() }, Modifier.fillMaxWidth(), enabled = !vm.testBusy)
                 vm.testResult?.let { Text(it, color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
+
+            SectionTitle("YOUTUBE PLAY")
+            YouTubeKeyCard(vm)
 
             SectionTitle("BACKEND PROXY (OPTIONAL)")
             GlassCard(Modifier.fillMaxWidth()) {
@@ -198,5 +198,25 @@ private fun CodingEngineCard(vm: AlicViewModel) {
             vm.toast = "Model saved."
         }, Modifier.fillMaxWidth())
         Text("Keys are stored encrypted on this phone. Create a key at platform.openai.com. Usage is billed by OpenAI.", color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+@Composable
+private fun YouTubeKeyCard(vm: AlicViewModel) {
+    var key by remember { mutableStateOf("") }
+    val saved = remember(vm.settings) { com.alic.ai.data.SecureStore(LocalContext.current).youtubeKey.isNotBlank() }
+    GlassCard(Modifier.fillMaxWidth()) {
+        Text("To play songs and videos directly, add a free YouTube Data API key (console.cloud.google.com → enable YouTube Data API v3 → Credentials → API key). Without it, ALIC only opens the search.", color = C.Sub, fontSize = 12.sp)
+        Text(if (saved) "YouTube key: saved" else "YouTube key: not set", color = if (saved) Color(0xFF2ECC71) else C.Err, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+        OutlinedTextField(
+            key, { key = it }, label = { Text("YouTube API key") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(),
+            colors = fieldColors(), shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RedButton("Save key", { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveYouTubeKey(key); key = "" } }, Modifier.weight(1f))
+            GhostButton("Remove", { vm.saveYouTubeKey("") }, Modifier.weight(1f))
+        }
     }
 }

@@ -39,7 +39,6 @@ import androidx.compose.ui.res.painterResource
 import com.alic.ai.R
 import com.alic.ai.data.ChatMessage
 import com.alic.ai.data.OrbState
-import com.alic.ai.emotion.Mood
 import com.alic.ai.service.AlicAccessibilityService
 import com.alic.ai.wake.WakeWordService
 import kotlinx.coroutines.delay
@@ -157,7 +156,6 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
             LevelWave(vm.level, active = vm.liveActive && !vm.liveMuted)
             Spacer(Modifier.height(6.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (vm.mood != Mood.NEUTRAL && vm.settings.emotionAware) StatusPill("Mood (estimate): ${vm.mood.label}", true)
                 StatusPill(if (vm.hasKey) "Gemini ready" else "Add API key", vm.hasKey) { nav.navigate("aiconfig") }
                 StatusPill(if (s.wakeEnabled || s.clapEnabled) "Wake-up on" else "Wake-up off", s.wakeEnabled || s.clapEnabled) { nav.navigate("wake") }
                 StatusPill(if (accessibilityOn) "Accessibility on" else "Accessibility off", accessibilityOn) { nav.navigate("permissions") }

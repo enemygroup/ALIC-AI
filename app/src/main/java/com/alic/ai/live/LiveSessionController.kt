@@ -125,7 +125,7 @@ object LiveSessionController {
         live.allowBargeIn = settings.voiceInterruption
         live.start(
             LiveConfig(
-                secure.apiKey, settings.baseUrl, settings.liveModel, settings.liveVoice,
+                secure.apiKey, settings.baseUrl, settings.liveModel, "Charon",
                 Prompts.system(settings, Prompts.VOICE_HINT + CallMonitor.hint()), AlicTools.declarations()
             ) { name, args ->
                 tools.run(name, args)

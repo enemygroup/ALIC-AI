@@ -49,7 +49,6 @@ class SettingsStore(private val ctx: Context) {
         val clapSens = stringPreferencesKey("clap_sensitivity")
         val codingProv = stringPreferencesKey("coding_provider")
         val openaiModel = stringPreferencesKey("openai_model")
-        val emotion = booleanPreferencesKey("emotion_aware")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -90,8 +89,7 @@ class SettingsStore(private val ctx: Context) {
             clapMode = p[K.clapMode] ?: d.clapMode,
             clapSensitivity = p[K.clapSens] ?: d.clapSensitivity,
             codingProvider = p[K.codingProv] ?: d.codingProvider,
-            openaiModel = p[K.openaiModel] ?: d.openaiModel,
-            emotionAware = p[K.emotion] ?: d.emotionAware
+            openaiModel = p[K.openaiModel] ?: d.openaiModel
         )
     }
 
@@ -111,7 +109,7 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
             p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
-            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel; p[K.emotion] = s.emotionAware
+            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel
         }
     }
 }
@@ -142,6 +140,14 @@ class SecureStore(ctx: Context) {
         get() = prefs?.getString("openai_key", "") ?: memoryOnlyOpenAI
         set(v) {
             if (prefs != null) prefs.edit().putString("openai_key", v.trim()).apply() else memoryOnlyOpenAI = v.trim()
+        }
+
+    private var memoryOnlyYouTube: String = ""
+
+    var youtubeKey: String
+        get() = prefs?.getString("youtube_key", "") ?: memoryOnlyYouTube
+        set(v) {
+            if (prefs != null) prefs.edit().putString("youtube_key", v.trim()).apply() else memoryOnlyYouTube = v.trim()
         }
 
     val secureStorageAvailable: Boolean get() = prefs != null

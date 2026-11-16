@@ -23,8 +23,6 @@ import com.alic.ai.data.*
 import com.alic.ai.device.AppInfo
 import com.alic.ai.device.AlicTools
 import com.alic.ai.projectbuild.ProjectBuilder
-import com.alic.ai.emotion.EmotionEngine
-import com.alic.ai.emotion.Mood
 import com.alic.ai.projectbuild.WebProjectPrompt
 import com.alic.ai.projectbuild.ProjectParser
 import com.alic.ai.projectbuild.ProjectPrompt
@@ -92,8 +90,6 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     var messages by mutableStateOf<List<ChatMessage>>(emptyList()); private set
     var conversations by mutableStateOf<List<Conversation>>(emptyList()); private set
     var busy by mutableStateOf(false); private set
-    /** Estimate from the last user message (text only). Shown as "estimate", never as fact. */
-    var mood by mutableStateOf(Mood.NEUTRAL); private set
     private var convId = UUID.randomUUID().toString()
     private var convCreated = System.currentTimeMillis()
     private var job: Job? = null
@@ -199,6 +195,14 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun runCommand(c: Command) {
+        if (c is Command.YouTube && secure.youtubeKey.isNotBlank()) {
+            viewModelScope.launch {
+                val r = withContext(Dispatchers.IO) { tools.run("youtube_search", JSONObject().put("query", c.query).put("music", c.music)) }
+                messages = messages + ChatMessage(role = "model", text = r)
+                persist()
+            }
+            return
+        }
         val r = launcher.execute(c)
         messages = messages + ChatMessage(role = "model", text = r)
         persist()
@@ -207,7 +211,6 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun ask() {
         job?.cancel()
-        mood = if (settings.emotionAware) EmotionEngine.estimate(messages.lastOrNull { it.isUser }?.text.orEmpty()) else Mood.NEUTRAL
         busy = true; chatOrb = OrbState.THINKING
         val hist = messages
         messages = messages + ChatMessage(role = "model", text = "")
@@ -219,7 +222,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
                 while (true) {
                     val modelParts = JSONArray()
                     val calls = mutableListOf<Pair<String, JSONObject>>()
-                    gemini.streamParts(cfg(), systemPrompt(EmotionEngine.context(mood)), contents, AlicTools.declarations()).collect { part ->
+                    gemini.streamParts(cfg(), systemPrompt(), contents, AlicTools.declarations()).collect { part ->
                         modelParts.put(part)
                         val fc = part.optJSONObject("functionCall")
                         if (fc != null) {
@@ -269,7 +272,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     fun speakMessage(text: String) {
         stopAll()
         chatOrb = OrbState.SPEAKING
-        voice.speak(text, EmotionEngine.voiceFor(mood, settings)) { chatOrb = OrbState.IDLE }
+        voice.speak(text, settings) { chatOrb = OrbState.IDLE }
     }
 
     /** Stops speaking and any in-flight generation. */
@@ -769,6 +772,11 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         emitAll(geminiCode.stream(cfg(), system, hist, null, 1))
+    }
+
+    fun saveYouTubeKey(k: String) {
+        secure.youtubeKey = k
+        toast = if (secure.youtubeKey.isNotBlank()) "YouTube key saved." else "YouTube key removed."
     }
 
     fun saveApiKey(k: String) { secure.apiKey = k; hasKey = secure.apiKey.isNotBlank(); toast = if (hasKey) "API key saved securely." else "API key removed." }

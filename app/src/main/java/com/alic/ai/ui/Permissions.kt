@@ -62,6 +62,7 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
             PermRow("Phone state", "Know when a call is ringing so ALIC can announce who is calling", Icons.Filled.Phone, hasPerm(ctx, Manifest.permission.READ_PHONE_STATE), "runtime", Manifest.permission.READ_PHONE_STATE),
             PermRow("Call log", "Lets Android give ALIC the caller's number", Icons.Filled.History, hasPerm(ctx, Manifest.permission.READ_CALL_LOG), "runtime", Manifest.permission.READ_CALL_LOG),
             PermRow("Answer and end calls", "Answer or hang up by voice: “Hey Alic, hang up”", Icons.Filled.CallEnd, hasPerm(ctx, Manifest.permission.ANSWER_PHONE_CALLS), "runtime", Manifest.permission.ANSWER_PHONE_CALLS),
+            PermRow("Media control", "Play, pause, skip and seek YouTube or music", Icons.Filled.MusicNote, Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")?.contains(ctx.packageName) == true, "listener"),
             PermRow("Accessibility service", "Lets ALIC press Back, Home, Recents and open notifications by command. It does not read your screen.", Icons.Filled.Accessibility, AlicAccessibilityService.isEnabled(ctx), "accessibility"),
             PermRow("Display over other apps", "Lets ALIC open apps and keep working while another app is on screen", Icons.Filled.Layers, Settings.canDrawOverlays(ctx), "overlay"),
             PermRow("Default AI assistant", "Make ALIC the assistant that opens when you hold the Home button or power button.", Icons.Filled.AutoAwesome, isDefaultAssistant(ctx), "assistant")
@@ -127,6 +128,7 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
             "runtime" -> if (r.perm != null) launcher.launch(arrayOf(r.perm))
             "accessibility" -> openAccessibility()
             "overlay" -> openOverlay()
+            "listener" -> ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             else -> requestAssistant()
         }
     }

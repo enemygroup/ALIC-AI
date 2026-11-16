@@ -59,7 +59,6 @@ data class AppSettings(
     val imageModel: String = "gemini-2.5-flash-image",
     val codingProvider: String = "gemini",   // gemini (default, free tier) or openai (ChatGPT)
     val openaiModel: String = "gpt-4o",
-    val emotionAware: Boolean = true,
     val clapEnabled: Boolean = false,
     val clapMode: String = "double",         // single, double
     val clapSensitivity: String = "medium"   // low, medium, high     // aurora, red, cyan, blue, purple

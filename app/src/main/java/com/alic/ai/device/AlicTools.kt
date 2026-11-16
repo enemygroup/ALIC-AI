@@ -16,6 +16,7 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.alic.ai.call.CallActions
+import com.alic.ai.data.SecureStore
 import com.alic.ai.service.AlicAccessibilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,7 +48,7 @@ object AlicTools {
             Triple("to", "STRING", "Contact name or phone number"), Triple("message", "STRING", "Message text"), required = listOf("to", "message")))
         .put(fn("send_whatsapp", "Prepare a WhatsApp message to a contact or number. WhatsApp opens with the text typed; the user taps Send.",
             Triple("to", "STRING", "Contact name or phone number"), Triple("message", "STRING", "Message text"), required = listOf("to", "message")))
-        .put(fn("youtube_search", "Search and show videos or music on YouTube / YouTube Music (use for 'play a song', 'show a video').",
+        .put(fn("youtube_search", "Play a video or song on YouTube or YouTube Music: it finds the first result and starts it. Use for play, chalao, bajao.",
             Triple("query", "STRING", "What to search for"), Triple("music", "BOOLEAN", "true to use YouTube Music"), required = listOf("query")))
         .put(fn("web_search", "Search Google for a query in the browser.",
             Triple("query", "STRING", "Search text"), required = listOf("query")))
@@ -76,6 +77,10 @@ object AlicTools {
             Triple("title", "STRING", "Event title"), Triple("start", "STRING", "Local start date-time like 2026-11-20T18:30"),
             Triple("duration_minutes", "INTEGER", "Length in minutes"), Triple("location", "STRING", "Optional place"),
             required = listOf("title", "start")))
+        .put(fn("media_control", "Control the currently playing YouTube or music audio: play, pause, next, previous, forward (10 s), rewind (10 s).",
+            Triple("action", "STRING", "play, pause, next, previous, forward or rewind"), required = listOf("action")))
+        .put(fn("scroll_screen", "Scroll the current screen up or down.",
+            Triple("direction", "STRING", "up or down"), required = listOf("direction")))
         .put(fn("get_time", "Get the current date and time on the phone."))
 }
 
@@ -91,7 +96,9 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
                 "call_contact" -> call(a.optString("name_or_number"))
                 "send_sms" -> sms(a.optString("to"), a.optString("message"))
                 "send_whatsapp" -> whatsapp(a.optString("to"), a.optString("message"))
-                "youtube_search" -> launcher.youtube(a.optString("query"), a.optBoolean("music", false))
+                "youtube_search" -> playOrSearch(a.optString("query"), a.optBoolean("music", false))
+                "media_control" -> com.alic.ai.service.MediaControl.run(ctx, a.optString("action"))
+                "scroll_screen" -> AlicAccessibilityService.scroll(a.optString("direction", "down").lowercase() != "up")
                 "web_search" -> openUrl("https://www.google.com/search?q=" + enc(a.optString("query")), "Searching Google")
                 "open_url" -> openUrl(a.optString("url"), "Opening the link")
                 "navigate" -> navigate(a.optString("destination"))
@@ -115,6 +122,12 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
         } catch (e: Exception) {
             "Failed: ${e.message}"
         }
+    }
+
+    private fun playOrSearch(q: String, music: Boolean): String {
+        val key = SecureStore(ctx).youtubeKey
+        if (key.isNotBlank()) return YouTubePlayer.playFirst(ctx, key, q, music)
+        return launcher.youtube(q, music) + " Add a free YouTube key in Settings to play it directly."
     }
 
     // ---- contacts ----

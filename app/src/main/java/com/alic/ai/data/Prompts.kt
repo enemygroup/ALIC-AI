@@ -10,7 +10,7 @@ object Prompts {
         )[s.responseStyle.coerceIn(0, 2)]
         val mem = if (s.memoryEnabled && s.memoryNotes.isNotEmpty())
             "\nUser-approved notes to remember:\n" + s.memoryNotes.joinToString("\n") { "- $it" } else ""
-        val p = Personas.byId(s.persona)
+        val p = Personas.byId("ultron")
         val gender = if (p.female)
             "Speak in first person as a woman (in Hindi use feminine forms such as \"main karungi\", \"main kar sakti hoon\"). "
         else
