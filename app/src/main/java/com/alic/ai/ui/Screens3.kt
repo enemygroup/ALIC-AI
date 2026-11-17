@@ -44,7 +44,7 @@ fun HistoryScreen(vm: AlicViewModel, nav: NavController) {
         q.isBlank() || c.title.contains(q, true) || c.messages.any { it.text.contains(q, true) }
     }
     val df = remember { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT) }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("History") {
             IconButton({ vm.exportAll()?.let { shareText(ctx, it) } ?: run { vm.toast = "No history to export." } }) { Icon(Icons.Filled.Share, "Export all", tint = C.Text) }
             IconButton({ confirmAll = true }) { Icon(Icons.Filled.Delete, "Clear all", tint = C.Text) }
@@ -91,7 +91,7 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
     var model by remember(s.model) { mutableStateOf(s.model) }
     var liveModel by remember(s.liveModel) { mutableStateOf(s.liveModel) }
     var baseUrl by remember(s.baseUrl) { mutableStateOf(s.baseUrl) }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Gemini API configuration", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp).padding(bottom = 24.dp)) {
             GlassCard(Modifier.fillMaxWidth()) {

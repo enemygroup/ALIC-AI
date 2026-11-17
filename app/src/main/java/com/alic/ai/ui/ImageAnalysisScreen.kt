@@ -62,7 +62,7 @@ fun ImageAnalysisScreen(vm: AlicViewModel, nav: NavController) {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Image Analysis", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             GhostButton("Choose image or screenshot", { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.fillMaxWidth(), Icons.Filled.Image)

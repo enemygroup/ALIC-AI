@@ -78,7 +78,7 @@ fun WakeSettingsScreen(vm: AlicViewModel, standalone: Boolean = false, onBack: (
         catch (e: Exception) { try { fallback?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } catch (e2: Exception) { vm.toast = "This settings page is not available on this phone." } }
     }
 
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Wake Up Detection", onBack = onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp).padding(bottom = 24.dp)) {
             SectionTitle("WAKE WORD")

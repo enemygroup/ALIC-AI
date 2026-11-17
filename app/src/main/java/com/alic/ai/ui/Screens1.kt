@@ -78,7 +78,7 @@ fun SplashScreen(ready: Boolean, onDone: () -> Unit) {
         minTime = true
     }
     LaunchedEffect(ready, minTime) { if (ready && minTime) { delay(250); done() } }
-    Box(Modifier.fillMaxSize().background(screenBg())) {
+    Box(Modifier.fillMaxSize()) {
         Particles()
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(18.dp))
@@ -116,7 +116,7 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         1f, 1.2f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "ringScale"
     )
 
-    Column(Modifier.fillMaxSize().background(screenBg()).padding(horizontal = 16.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         // Header: logo, online status, profile and settings shortcuts
         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.width(10.dp))
@@ -210,7 +210,7 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
         if (vm.settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         vm.send(input); input = ""
     }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)

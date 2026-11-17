@@ -33,7 +33,7 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /** Emerald glow used for card borders. */
-fun glowBrush(): Brush = Brush.linearGradient(listOf(C.Neon.copy(alpha = 0.85f), C.Dark.copy(alpha = 0.45f), C.Neon.copy(alpha = 0.65f)))
+fun glowBrush(): Brush = Brush.linearGradient(C.orb.map { it.copy(alpha = 0.9f) })
 
 /** Glass card: translucent surface, emerald glowing border, soft shadow. */
 @Composable

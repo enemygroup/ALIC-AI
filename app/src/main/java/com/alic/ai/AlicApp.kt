@@ -19,6 +19,7 @@ class AlicApp : Application() {
             previous?.uncaughtException(thread, error)
         }
         initLive()
+        com.alic.ai.data.AlicRuleState.refresh(com.alic.ai.data.AlicRuleStore(this).all())
         try {
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(

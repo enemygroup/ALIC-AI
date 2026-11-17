@@ -32,7 +32,7 @@ Reply with the message text only. No quotes, no labels, no explanation."""
         val settings = SettingsStore(ctx).flow.first()
         val history = store.history(contact).map { ChatMessage(role = if (it.first == "out") "model" else "user", text = it.second) } +
             ChatMessage(role = "user", text = incoming)
-        val system = SYSTEM + "\nThe sender's name is " + contact + ". Owner's AI persona: powerful male assistant."
+        val system = SYSTEM + com.alic.ai.data.AlicRuleState.block + "\nThe sender's name is " + contact + ". Owner's AI persona: powerful male assistant."
         try {
             val text = GeminiClient(http)
                 .stream(ApiConfig(key, settings.model, settings.baseUrl), system, history, null, 2)

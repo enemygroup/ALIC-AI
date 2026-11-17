@@ -49,7 +49,7 @@ fun CompareScreen(nav: NavController) {
         BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 4 })
     }
 
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Image Compare", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

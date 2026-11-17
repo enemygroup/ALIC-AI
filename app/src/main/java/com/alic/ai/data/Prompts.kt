@@ -4,7 +4,9 @@ package com.alic.ai.data
 object Prompts {
     const val VOICE_HINT = "\nYour reply will be spoken aloud: use plain conversational sentences, no Markdown, no lists, and keep it brief."
 
-    fun system(s: AppSettings, extra: String = ""): String {
+    fun system(s: AppSettings, extra: String = ""): String = system0(s, extra + AlicRuleState.block)
+
+    private fun system0(s: AppSettings, extra: String = ""): String {
         val style = listOf(
             "Keep answers short and direct.", "Give balanced, clear answers.", "Give detailed, thorough answers."
         )[s.responseStyle.coerceIn(0, 2)]

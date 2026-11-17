@@ -52,7 +52,7 @@ fun CodingScreen(vm: AlicViewModel, nav: NavController) {
     var code by remember { mutableStateOf("") }
     val langs = listOf("Kotlin", "Python", "PHP", "HTML/CSS/JS", "JavaScript", "Java", "Firebase Rules", "Android (Compose)")
     val modes = listOf("Generate", "Explain", "Debug", "Fix", "Chat")
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Coding Studio", onBack = { nav.popBackStack() }) {
             IconButton({ vm.codingRegenerate() }) { Icon(Icons.Filled.Refresh, "Regenerate", tint = C.Text) }
             IconButton({ vm.codingClear() }) { Icon(Icons.Filled.Delete, "Clear", tint = C.Text) }
@@ -115,7 +115,7 @@ fun VisionScreen(vm: AlicViewModel, nav: NavController) {
         if (ok) cam.launch(captureUri) else vm.toast = "Camera permission is required to take photos."
     }
     val quick = listOf("Describe this image", "Identify the objects", "Explain this document", "Explain this screenshot", "Extract all text")
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("AI Vision", onBack = { nav.popBackStack() }) {
             if (vm.visionBitmap != null) IconButton({ vm.clearVision() }) { Icon(Icons.Filled.Close, "Remove image", tint = C.Text) }
         }
@@ -155,7 +155,7 @@ fun VisionScreen(vm: AlicViewModel, nav: NavController) {
 fun YouTubeScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
     var link by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("YouTube Assistant", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(12.dp)) {
             OutlinedTextField(q, { q = it }, label = { Text("Search videos or music") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(14.dp))
@@ -190,7 +190,7 @@ fun AppsScreen(vm: AlicViewModel, nav: NavController) {
     val apps = remember { vm.installedApps() }
     var filter by remember { mutableStateOf("") }
     val shown = apps.filter { it.label.contains(filter, ignoreCase = true) }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("App Control", onBack = { nav.popBackStack() })
         Text("Type “camera open karo” or “WhatsApp kholo” in chat, or tap an app below.", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
         OutlinedTextField(

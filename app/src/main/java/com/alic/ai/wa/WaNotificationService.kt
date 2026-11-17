@@ -77,6 +77,7 @@ class WaNotificationService : NotificationListenerService() {
         }
         val action = n.notification.actions?.firstOrNull { it.remoteInputs?.isNotEmpty() == true }
         if (action != null) synchronized(replyActions) { replyActions[title] = action to System.currentTimeMillis() }
+        else WaLog.log("No inline Reply on this notification from $title (auto reply needs it)")
         WaLog.log("Message from $title")
         if (store.readMessages) speak("$title ka message aaya hai. $text")
         scope.launch { process(title, text, group, action) }

@@ -50,7 +50,7 @@ fun LiveScreen(vm: AlicViewModel, nav: NavController) {
         c.muted -> "Microphone muted"
         else -> "I'm listening..."
     }
-    Column(Modifier.fillMaxSize().background(screenBg()).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             Text("Voice Assistant", color = C.Text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
@@ -109,7 +109,7 @@ fun QuickScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         Q("Profile", Icons.Filled.Person) { nav.navigate("profile") },
         Q("Settings", Icons.Filled.Settings) { nav.navigate("settings") }
     )
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Quick Actions", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Column(Modifier.fillMaxWidth()) {
@@ -160,7 +160,7 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         T("Wake-up", "Hey Alic and clap settings", Icons.Filled.GraphicEq, "wake"),
         T("Permissions", "Mic, camera, calls, overlay", Icons.Filled.Security, "permissions")
     )
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Tools")
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp)) {
             items(tools.chunked(2)) { pair ->
@@ -184,7 +184,7 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
 @Composable
 fun WebSearchScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(screenBg()).padding(bottom = 8.dp)) {
+    Column(Modifier.fillMaxSize().padding(bottom = 8.dp)) {
         ScreenHeader("Web Search", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             OutlinedTextField(q, { q = it }, label = { Text("Search the web") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
@@ -201,7 +201,7 @@ fun WebSearchScreen(vm: AlicViewModel, nav: NavController) {
 @Composable
 fun ImageGenScreen(vm: AlicViewModel, nav: NavController) {
     var p by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Image Generator", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             OutlinedTextField(p, { p = it }, label = { Text("Describe the image") }, minLines = 3, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
@@ -224,7 +224,7 @@ fun ImageGenScreen(vm: AlicViewModel, nav: NavController) {
 fun FileAssistScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? -> if (uri != null) vm.loadFile(uri) }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("File Assistant", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             NeoCard(Modifier.fillMaxWidth(), onClick = { pick.launch(arrayOf("*/*")) }) {
@@ -254,7 +254,7 @@ fun ProfileScreen(vm: AlicViewModel, nav: NavController) {
     LaunchedEffect(Unit) { vm.loadAvatar() }
     var nameDraft by remember(s.userName) { mutableStateOf(s.userName) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? -> if (uri != null) vm.setAvatar(uri) }
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Profile", onBack = { nav.popBackStack() }) {
             IconButton({ nav.navigate("settings") }) { Icon(Icons.Filled.Settings, "Settings", tint = C.Text) }
         }
@@ -295,7 +295,7 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
     var wipe by remember { mutableStateOf(false) }
     var doc by remember { mutableStateOf<String?>(null) }
     val persona = Personas.byId(s.persona)
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("Settings", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
             SectionTitle("AI SETTINGS")
@@ -347,6 +347,9 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             ListRow(Icons.Filled.SettingsVoice, "Default digital assistant", "Choose ALIC AI as the assistant", onClick = { nav.navigate("permissions") })
             ListRow(Icons.Filled.Security, "Permissions", "All app permissions", onClick = { nav.navigate("permissions") })
             ListRow(Icons.Filled.DeleteSweep, "Delete my data", "Chats and notes on this device", titleColor = C.Err, onClick = { wipe = true })
+
+            SectionTitle("ALIC RULES")
+            ListRow(Icons.Filled.Gavel, "ALIC Rules", "Your own rules for how ALIC behaves", onClick = { nav.navigate("rules") })
 
             SectionTitle("AUTOMATION")
             ListRow(Icons.Filled.Chat, "WhatsApp Automation", "Off by default. Smart replies for one-to-one chats", onClick = { nav.navigate("wa") })

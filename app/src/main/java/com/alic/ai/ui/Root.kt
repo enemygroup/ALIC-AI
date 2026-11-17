@@ -72,8 +72,10 @@ fun AlicRoot(vm: AlicViewModel) {
     }
     val barRoutes = setOf("home", "chat", "live", "tools", "profile")
 
+    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+    AuroraBackground()
     Scaffold(
-        containerColor = C.Bg,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snack) },
         bottomBar = {
             if (route in barRoutes) {
@@ -105,6 +107,7 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("compare") { CompareScreen(nav) }
             composable("imageanalysis") { ImageAnalysisScreen(vm, nav) }
             composable("wa") { WaScreen(nav) }
+            composable("rules") { RulesScreen(nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }
@@ -112,6 +115,8 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("apps") { AppsScreen(vm, nav) }
             composable("live") { LiveScreen(vm, nav) }
         }
+    }
+
     }
 
     vm.pendingCommand?.let { c ->

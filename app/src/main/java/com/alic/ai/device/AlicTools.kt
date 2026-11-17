@@ -17,6 +17,9 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.alic.ai.call.CallActions
 import com.alic.ai.data.SecureStore
+import com.alic.ai.projectbuild.ProjectSaver
+import android.content.ContentUris
+import android.provider.MediaStore
 import com.alic.ai.service.AlicAccessibilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -83,6 +86,10 @@ object AlicTools {
             Triple("direction", "STRING", "up or down"), required = listOf("direction")))
         .put(fn("read_notifications", "Read the most recent phone notifications so ALIC can summarise them. Use when the user asks what notifications they have.",
             Triple("limit", "INTEGER", "How many recent notifications, 1 to 10"), required = emptyList()))
+        .put(fn("youtube_action", "Press Like or Subscribe on the YouTube video currently open on screen.",
+            Triple("action", "STRING", "like or subscribe"), required = listOf("action")))
+        .put(fn("send_photo", "Send a photo from the gallery to a contact on WhatsApp or SMS. which = latest, or a word from the photo name or album (for example Screenshots).",
+            Triple("to", "STRING", "Contact name"), Triple("which", "STRING", "latest, or a name/album word"), Triple("app", "STRING", "whatsapp or sms"), required = listOf("to")))
         .put(fn("get_time", "Get the current date and time on the phone."))
 }
 
@@ -115,6 +122,8 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
                 "call_speaker" -> CallActions.speaker(ctx, a.optBoolean("on", true))
                 "add_calendar_event" -> calendarEvent(a.optString("title"), a.optString("start"), a.optInt("duration_minutes", 60), a.optString("location"))
                 "read_notifications" -> readNotifications(a.optInt("limit", 5))
+                "youtube_action" -> youtubeAction(a.optString("action"))
+                "send_photo" -> sendPhoto(a.optString("to"), a.optString("which"), a.optString("app") == "sms")
                 "get_time" -> SimpleDateFormat("EEEE, d MMMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
                 else -> "Unknown function: $name"
             }
@@ -139,6 +148,74 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
         return list.joinToString("\n") { n ->
             "- ${n.pkg}: ${n.title}" + if (n.text.isNotBlank()) " — ${n.text}" else ""
         }
+    }
+
+    private fun youtubeAction(action: String): String {
+        if (AlicAccessibilityService.instance == null) return "Turn on ALIC AI in Accessibility settings first, then open the video."
+        val ok = when (action.trim().lowercase()) {
+            "like" -> AlicAccessibilityService.clickByLabel { l ->
+                val x = l.lowercase()
+                x == "like" || x.contains("like this video")
+            }
+            "subscribe" -> AlicAccessibilityService.clickByLabel { l ->
+                val x = l.lowercase()
+                x == "subscribe" || (x.contains("subscribe") && !x.contains("subscribed") && !x.contains("unsubscribe"))
+            }
+            else -> return "Unknown action. Use like or subscribe."
+        }
+        return if (ok) "Done: ${action.trim()}." else "Could not find the ${action.trim()} button. Open the YouTube video and keep it on screen, then ask again."
+    }
+
+    /** Waits for the app to open the drafted message, then presses its Send button through Accessibility. */
+    private fun pressSend(app: String, name: String, msg: String): String {
+        Thread.sleep(2200)
+        val clicked = AlicAccessibilityService.instance != null && AlicAccessibilityService.clickByLabel { l ->
+            val x = l.trim().lowercase()
+            x == "send" || x == "send message" || x == "send sms"
+        }
+        if (clicked) return "Message to $name sent through $app."
+        val saved = ProjectSaver.write(ctx, "Drafts/draft_${System.currentTimeMillis()}.txt", "To: $name\n\n$msg".toByteArray(Charsets.UTF_8), "text/plain")
+        return if (saved >= 0) "I could not press Send in $app, so the message is saved as a draft in Download/ALIC_AI/Drafts."
+        else "I could not press Send, and saving the draft failed too. Please send it yourself."
+    }
+
+    /** Sends the newest photo (or one whose name/album matches) to a contact, via the share sheet. */
+    private fun sendPhoto(to: String, which: String, viaSms: Boolean): String {
+        val (name, _) = resolve(to) ?: return "No contact found for \"$to\"."
+        val photoPerm = if (android.os.Build.VERSION.SDK_INT >= 33) "android.permission.READ_MEDIA_IMAGES" else "android.permission.READ_EXTERNAL_STORAGE"
+        if (!has(photoPerm)) return "Allow Photos in ALIC's Permissions first."
+        val uri = latestImage(which) ?: return "No photo found${if (which.isBlank()) "" else " matching \"$which\""}."
+        val share = Intent(Intent.ACTION_SEND).setType("image/*").putExtra(Intent.EXTRA_STREAM, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (!viaSms) share.setPackage("com.whatsapp")
+        try { ctx.startActivity(share) } catch (e: android.content.ActivityNotFoundException) { return "That messaging app is not installed." }
+        Thread.sleep(2500)
+        if (AlicAccessibilityService.instance == null) return "The photo is ready to share. Turn on ALIC's Accessibility to pick $name and press Send."
+        val first = name.trim().split(" ").firstOrNull().orEmpty()
+        val picked = AlicAccessibilityService.clickByLabel { l ->
+            val x = l.trim()
+            x.equals(name.trim(), ignoreCase = true) || (first.isNotBlank() && x.equals(first, ignoreCase = true))
+        }
+        if (!picked) return "The photo is ready, but I could not find $name in the list. Please pick the contact yourself."
+        Thread.sleep(1200)
+        val sent = AlicAccessibilityService.clickByLabel { l -> l.trim().lowercase() == "send" }
+        return if (sent) "Photo sent to $name." else "The photo is ready for $name. Please tap Send."
+    }
+
+    /** Newest image, or the newest whose file name or album contains [which]. */
+    private fun latestImage(which: String): android.net.Uri? {
+        val key = which.trim()
+        val useAll = key.isBlank() || key.equals("latest", true) || key.equals("last", true)
+        val sel: String? = if (useAll) null else
+            "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR ${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} LIKE ?"
+        val args: Array<String>? = if (useAll) null else arrayOf("%$key%", "%$key%")
+        ctx.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Images.Media._ID), sel, args,
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )?.use { c ->
+            if (c.moveToFirst()) return ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, c.getLong(0))
+        }
+        return null
     }
 
     // ---- contacts ----
@@ -180,7 +257,7 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
     private fun sms(to: String, msg: String): String {
         val (name, num) = resolve(to) ?: return "No contact or number found for \"$to\"."
         start(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(num))).putExtra("sms_body", msg))
-        return "Message to $name is ready in Messages. The user has to tap Send."
+        return pressSend("Messages", name, msg)
     }
 
     private fun whatsapp(to: String, msg: String): String {
@@ -188,10 +265,10 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
         val digits = num.filter { it.isDigit() }
         val uri = Uri.parse("https://wa.me/$digits?text=" + enc(msg))
         for (pkg in listOf("com.whatsapp", "com.whatsapp.w4b")) {
-            try { start(Intent(Intent.ACTION_VIEW, uri).setPackage(pkg)); return "WhatsApp chat with $name is open with the message typed. The user has to tap Send." } catch (e: Exception) {}
+            try { start(Intent(Intent.ACTION_VIEW, uri).setPackage(pkg)); return pressSend("WhatsApp", name, msg) } catch (e: Exception) {}
         }
         start(Intent(Intent.ACTION_VIEW, uri))
-        return "Opened the WhatsApp link for $name. The user has to tap Send."
+        return pressSend("WhatsApp", name, msg)
     }
 
     // ---- web / maps ----

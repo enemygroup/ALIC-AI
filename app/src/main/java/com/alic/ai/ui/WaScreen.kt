@@ -47,7 +47,7 @@ fun WaScreen(nav: NavController) {
     var reply by remember { mutableStateOf("") }
     val access = remember { WaNotificationService.isEnabled(ctx) }
 
-    Column(Modifier.fillMaxSize().background(screenBg())) {
+    Column(Modifier.fillMaxSize()) {
         ScreenHeader("WhatsApp Automation", onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
             SectionTitle("STATUS")
