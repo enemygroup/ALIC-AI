@@ -1,5 +1,7 @@
 package com.alic.ai.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.material3.*
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
