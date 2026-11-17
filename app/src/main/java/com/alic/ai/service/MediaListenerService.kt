@@ -4,9 +4,37 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.session.MediaSessionManager
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 
-/** Needed only to read the active media sessions (YouTube, YouTube Music). It does not read notifications. */
-class MediaListenerService : NotificationListenerService()
+/**
+ * Notification access (with the user's permission). Keeps only the last 30 notifications IN MEMORY,
+ * never on disk, and they are returned only when the user asks for a summary.
+ */
+class MediaListenerService : NotificationListenerService() {
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        val n = sbn ?: return
+        if (n.packageName == packageName) return
+        val extras = n.notification.extras
+        val title = extras.getCharSequence("android.title")?.toString().orEmpty()
+        val text = extras.getCharSequence("android.text")?.toString().orEmpty()
+        if (title.isBlank() && text.isBlank()) return
+        NotificationStore.add(AppNotice(n.packageName, title, text))
+    }
+}
+
+data class AppNotice(val pkg: String, val title: String, val text: String)
+
+object NotificationStore {
+    private const val MAX = 30
+    private val items = ArrayDeque<AppNotice>()
+
+    @Synchronized fun add(n: AppNotice) {
+        items.addLast(n)
+        while (items.size > MAX) items.removeFirst()
+    }
+
+    @Synchronized fun latest(limit: Int): List<AppNotice> = items.toList().takeLast(limit.coerceIn(1, MAX)).reversed()
+}
 
 object MediaControl {
     fun run(ctx: Context, action: String): String {

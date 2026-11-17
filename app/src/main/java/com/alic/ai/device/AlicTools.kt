@@ -81,6 +81,8 @@ object AlicTools {
             Triple("action", "STRING", "play, pause, next, previous, forward or rewind"), required = listOf("action")))
         .put(fn("scroll_screen", "Scroll the current screen up or down.",
             Triple("direction", "STRING", "up or down"), required = listOf("direction")))
+        .put(fn("read_notifications", "Read the most recent phone notifications so ALIC can summarise them. Use when the user asks what notifications they have.",
+            Triple("limit", "INTEGER", "How many recent notifications, 1 to 10"), required = emptyList()))
         .put(fn("get_time", "Get the current date and time on the phone."))
 }
 
@@ -112,6 +114,7 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
                 "answer_call" -> CallActions.answer(ctx)
                 "call_speaker" -> CallActions.speaker(ctx, a.optBoolean("on", true))
                 "add_calendar_event" -> calendarEvent(a.optString("title"), a.optString("start"), a.optInt("duration_minutes", 60), a.optString("location"))
+                "read_notifications" -> readNotifications(a.optInt("limit", 5))
                 "get_time" -> SimpleDateFormat("EEEE, d MMMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
                 else -> "Unknown function: $name"
             }
@@ -128,6 +131,14 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
         val key = SecureStore(ctx).youtubeKey
         if (key.isNotBlank()) return YouTubePlayer.playFirst(ctx, key, q, music)
         return launcher.youtube(q, music) + " Add a free YouTube key in Settings to play it directly."
+    }
+
+    private fun readNotifications(limit: Int): String {
+        val list = com.alic.ai.service.NotificationStore.latest(limit)
+        if (list.isEmpty()) return "No recent notifications. If you expect some, turn on Media control (notification access) in Permissions."
+        return list.joinToString("\n") { n ->
+            "- ${n.pkg}: ${n.title}" + if (n.text.isNotBlank()) " — ${n.text}" else ""
+        }
     }
 
     // ---- contacts ----

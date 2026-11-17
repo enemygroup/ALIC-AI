@@ -203,8 +203,9 @@ private fun CodingEngineCard(vm: AlicViewModel) {
 
 @Composable
 private fun YouTubeKeyCard(vm: AlicViewModel) {
+    val ctx = LocalContext.current
     var key by remember { mutableStateOf("") }
-    val saved = remember(vm.settings) { com.alic.ai.data.SecureStore(LocalContext.current).youtubeKey.isNotBlank() }
+    val saved = remember(vm.settings) { com.alic.ai.data.SecureStore(ctx).youtubeKey.isNotBlank() }
     GlassCard(Modifier.fillMaxWidth()) {
         Text("To play songs and videos directly, add a free YouTube Data API key (console.cloud.google.com → enable YouTube Data API v3 → Credentials → API key). Without it, ALIC only opens the search.", color = C.Sub, fontSize = 12.sp)
         Text(if (saved) "YouTube key: saved" else "YouTube key: not set", color = if (saved) Color(0xFF2ECC71) else C.Err, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))

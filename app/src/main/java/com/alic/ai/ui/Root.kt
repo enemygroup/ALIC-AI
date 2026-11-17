@@ -102,6 +102,9 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("wake") { WakeSettingsScreen(vm, onBack = { nav.popBackStack() }) }
             composable("aiconfig") { AIConfigScreen(vm, nav) }
             composable("websearch") { WebSearchScreen(vm, nav) }
+            composable("compare") { CompareScreen(nav) }
+            composable("imageanalysis") { ImageAnalysisScreen(vm, nav) }
+            composable("wa") { WaScreen(nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }

@@ -147,6 +147,8 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
     data class T(val title: String, val sub: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val route: String?, val act: (() -> Unit)? = null)
     val tools = listOf(
         T("Web Search", "Answers from Google", Icons.Filled.Search, "websearch"),
+        T("Image Compare", "Find differences between two images", Icons.Filled.Image, "compare"),
+        T("Image Analysis", "Text (OCR) and objects in photos", Icons.Filled.Search, "imageanalysis"),
         T("Image Generator", "Create images from text", Icons.Filled.Image, "imagegen"),
         T("File Assistant", "Ask about a file", Icons.Filled.AttachFile, "fileassist"),
         T("AI Vision", "Camera and gallery questions", Icons.Filled.CameraAlt, "vision"),
@@ -345,6 +347,9 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             ListRow(Icons.Filled.SettingsVoice, "Default digital assistant", "Choose ALIC AI as the assistant", onClick = { nav.navigate("permissions") })
             ListRow(Icons.Filled.Security, "Permissions", "All app permissions", onClick = { nav.navigate("permissions") })
             ListRow(Icons.Filled.DeleteSweep, "Delete my data", "Chats and notes on this device", titleColor = C.Err, onClick = { wipe = true })
+
+            SectionTitle("AUTOMATION")
+            ListRow(Icons.Filled.Chat, "WhatsApp Automation", "Off by default. Smart replies for one-to-one chats", onClick = { nav.navigate("wa") })
 
             SectionTitle("ABOUT")
             ListRow(Icons.Filled.Info, "About ALIC AI", "Version 1.0.0 · THE POWER OF INTELLIGENCE", onClick = { doc = "about" })
