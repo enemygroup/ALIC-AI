@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -72,7 +73,7 @@ fun AlicRoot(vm: AlicViewModel) {
     }
     val barRoutes = setOf("home", "chat", "live", "tools", "profile")
 
-    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
     AuroraBackground()
     Scaffold(
         containerColor = Color.Transparent,
