@@ -9,9 +9,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** Orb looks the user can choose in Settings → Appearance. "dots" is the default sphere. */
-val ORB_STYLES = listOf("dots" to "Dots", "rings" to "Rings", "bars" to "Bars", "orbit" to "Orbit", "core" to "Core")
-
+/** Legacy orb drawings. The user-facing orb list lives in Orb.kt as ORB_STYLES (List<OrbDesign>). */
 fun DrawScope.drawOrbStyle(style: String, pal: List<Color>, c: Offset, r: Float, ph: Float, lv: Float, unit: Float) {
     val tau = (2 * PI).toFloat()
     val n = pal.size

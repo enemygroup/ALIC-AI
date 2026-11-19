@@ -310,7 +310,7 @@ private fun DrawScope.styleReactor(f: OrbFrame) {
 
 /** Shared lifecycle-safe orb. Animation values are read in the draw phase only. */
 @Composable
-fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animated: Boolean = true) {
+fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animated: Boolean = true, style: String? = null) {
     val t = rememberInfiniteTransition(label = "orb")
     val phaseS = t.animateFloat(0f, 1f, infiniteRepeatable(tween(12000, easing = LinearEasing)), label = "phase")
     val breatheS = t.animateFloat(0.95f, 1.05f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
@@ -338,7 +338,7 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
             pal = C.orb.take(6), glow = if (ThemeState.orbGlowOn) ThemeState.orbGlow else 0f,
             dens = ThemeState.orbDensity, particles = ThemeState.orbParticles, dark = ThemeState.isDark
         )
-        when (normalizeOrb(ThemeState.orbStyle)) {
+        when (normalizeOrb(style ?: ThemeState.orbStyle)) {
             "holo" -> styleHolo(frame)
             "galaxy" -> styleGalaxy(frame)
             "glass" -> styleGlass(frame)
