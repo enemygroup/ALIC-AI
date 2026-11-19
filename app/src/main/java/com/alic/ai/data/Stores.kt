@@ -49,6 +49,15 @@ class SettingsStore(private val ctx: Context) {
         val clapSens = stringPreferencesKey("clap_sensitivity")
         val codingProv = stringPreferencesKey("coding_provider")
         val openaiModel = stringPreferencesKey("openai_model")
+        val liveWake = booleanPreferencesKey("live_wake_only")
+        val orbStyle = stringPreferencesKey("orb_style")
+        val appTheme = stringPreferencesKey("app_theme")
+        val orbSize = floatPreferencesKey("orb_size")
+        val orbGlow = floatPreferencesKey("orb_glow")
+        val orbSpeed = floatPreferencesKey("orb_speed")
+        val orbDensity = floatPreferencesKey("orb_density")
+        val orbParticles = booleanPreferencesKey("orb_particles")
+        val orbGlowOn = booleanPreferencesKey("orb_glow_on")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -89,7 +98,16 @@ class SettingsStore(private val ctx: Context) {
             clapMode = p[K.clapMode] ?: d.clapMode,
             clapSensitivity = p[K.clapSens] ?: d.clapSensitivity,
             codingProvider = p[K.codingProv] ?: d.codingProvider,
-            openaiModel = p[K.openaiModel] ?: d.openaiModel
+            openaiModel = p[K.openaiModel] ?: d.openaiModel,
+            liveWakeOnly = p[K.liveWake] ?: d.liveWakeOnly,
+            orbStyle = p[K.orbStyle] ?: d.orbStyle,
+            orbSize = p[K.orbSize] ?: d.orbSize,
+            orbGlow = p[K.orbGlow] ?: d.orbGlow,
+            orbSpeed = p[K.orbSpeed] ?: d.orbSpeed,
+            orbDensity = p[K.orbDensity] ?: d.orbDensity,
+            orbParticles = p[K.orbParticles] ?: d.orbParticles,
+            orbGlowOn = p[K.orbGlowOn] ?: d.orbGlowOn,
+            appTheme = p[K.appTheme] ?: d.appTheme
         )
     }
 
@@ -109,7 +127,7 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
             p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
-            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel
+            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel; p[K.liveWake] = s.liveWakeOnly; p[K.orbStyle] = s.orbStyle; p[K.appTheme] = s.appTheme; p[K.orbSize] = s.orbSize; p[K.orbGlow] = s.orbGlow; p[K.orbSpeed] = s.orbSpeed; p[K.orbDensity] = s.orbDensity; p[K.orbParticles] = s.orbParticles; p[K.orbGlowOn] = s.orbGlowOn
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.alic.ai.data.AppSettings
 import androidx.compose.ui.unit.sp
 
 /** An accent colour set: buttons (primary), highlights (neon), deep shade and the multi-colour orb gradient. */
@@ -56,9 +57,24 @@ object Accents {
 object ThemeState {
     var mode by mutableStateOf("dark")      // dark, light, sunset
     var accentId by mutableStateOf("emerald")
+    /** Full colour set chosen in Theme Studio; null = built-in mode and accent. */
+    var palette by mutableStateOf<Palette?>(null)
+    var orbStyle by mutableStateOf("particle")
+    var orbSize by mutableStateOf(1f)
+    var orbGlow by mutableStateOf(1f)
+    var orbSpeed by mutableStateOf(1f)
+    var orbDensity by mutableStateOf(1f)
+    var orbParticles by mutableStateOf(true)
+    var orbGlowOn by mutableStateOf(true)
+
+    fun applyOrb(s: AppSettings) {
+        orbStyle = normalizeOrb(s.orbStyle)
+        orbSize = s.orbSize; orbGlow = s.orbGlow; orbSpeed = s.orbSpeed; orbDensity = s.orbDensity
+        orbParticles = s.orbParticles; orbGlowOn = s.orbGlowOn
+    }
     fun apply(m: String, a: String) { mode = m; accentId = a }
     val accent: Accent get() = if (mode == "sunset") Accents.Sunset else Accents.byId(accentId)
-    val isDark: Boolean get() = mode != "light"
+    val isDark: Boolean get() = palette?.let { !it.light } ?: (mode != "light")
 }
 
 object C {
@@ -66,21 +82,21 @@ object C {
     private val dark get() = ThemeState.isDark
     private val acc get() = ThemeState.accent
 
-    val Bg: Color get() = when (mode) { "light" -> Color(0xFFF4F4F8); "sunset" -> Color(0xFF1B0A2E); else -> Color(0xFF050807) }
-    val Bg2: Color get() = when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0xFF2A1141); else -> Color(0xFF0A100D) }
-    val Card: Color get() = when (mode) { "light" -> Color(0xFFECECF3); "sunset" -> Color(0xFF35174F); else -> Color(0xFF101A15) }
-    val Text: Color get() = when (mode) { "light" -> Color(0xFF14141A); "sunset" -> Color(0xFFFFF1E6); else -> Color(0xFFFFFFFF) }
-    val Sub: Color get() = when (mode) { "light" -> Color(0xFF5E6068); "sunset" -> Color(0xFFD3B3C9); else -> Color(0xFFA3B5AA) }
-    val Border: Color get() = when (mode) { "light" -> Color(0xFFD2D2DC); "sunset" -> Color(0xFF5B2D63); else -> Color(0xFF244C38) }
+    val Bg: Color get() = ThemeState.palette?.bg ?: (when (mode) { "light" -> Color(0xFFF4F4F8); "sunset" -> Color(0xFF1B0A2E); else -> Color(0xFF050807) })
+    val Bg2: Color get() = ThemeState.palette?.card ?: (when (mode) { "light" -> Color(0xFFFFFFFF); "sunset" -> Color(0xFF2A1141); else -> Color(0xFF0A100D) })
+    val Card: Color get() = ThemeState.palette?.card ?: (when (mode) { "light" -> Color(0xFFECECF3); "sunset" -> Color(0xFF35174F); else -> Color(0xFF101A15) })
+    val Text: Color get() = ThemeState.palette?.text ?: (when (mode) { "light" -> Color(0xFF14141A); "sunset" -> Color(0xFFFFF1E6); else -> Color(0xFFFFFFFF) })
+    val Sub: Color get() = ThemeState.palette?.sub ?: (when (mode) { "light" -> Color(0xFF5E6068); "sunset" -> Color(0xFFD3B3C9); else -> Color(0xFFA3B5AA) })
+    val Border: Color get() = ThemeState.palette?.border ?: (when (mode) { "light" -> Color(0xFFD2D2DC); "sunset" -> Color(0xFF5B2D63); else -> Color(0xFF244C38) })
 
-    val Red: Color get() = acc.primary
-    val Neon: Color get() = if (dark) acc.neon else acc.primary
-    val Dark: Color get() = acc.deep
+    val Red: Color get() = ThemeState.palette?.primary ?: (acc.primary)
+    val Neon: Color get() = ThemeState.palette?.accent ?: (if (dark) acc.neon else acc.primary)
+    val Dark: Color get() = ThemeState.palette?.secondary ?: (acc.deep)
     /** Text/icons drawn on the primary colour: near-black on emerald, white on the other accents. */
     val OnPrimary: Color get() = if (ThemeState.accent.id == "emerald") Color(0xFF031109) else Color.White
     val Muted: Color get() = when (mode) { "light" -> Color(0xFF8A8D96); "sunset" -> Color(0xFFA88FA3); else -> Color(0xFF64756B) }
     val Err = Color(0xFFFF5252)
-    val orb: List<Color> get() = acc.orb
+    val orb: List<Color> get() = ThemeState.palette?.orb ?: (acc.orb)
 
     val Cyan = Color(0xFF22E4FF)
     val Blue = Color(0xFF2F6BFF)

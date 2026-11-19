@@ -50,6 +50,8 @@ class GeminiLive(baseHttp: OkHttpClient) {
     @Volatile var muted = false
     /** true = mic audio is sent while ALIC speaks (user can interrupt). false = silence frames are sent (echo protection). */
     @Volatile var allowBargeIn = true
+    /** Optional gate on microphone frames: returns false to send silence instead (used by "Hey Alic" reply-only mode). */
+    @Volatile var audioGate: ((ByteArray, Int) -> Boolean)? = null
     @Volatile private var playEndMs = 0L
 
     private val http = baseHttp.newBuilder().pingInterval(20, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS).build()
@@ -263,6 +265,8 @@ class GeminiLive(baseHttp: OkHttpClient) {
                 val n = rec.read(buf, 0, buf.size)
                 if (n <= 0) continue
                 if (muted || !ready) { events.tryEmit(Ev.Level(0f)); continue }
+                val gate = audioGate
+                if (gate != null && !gate(buf, n)) java.util.Arrays.fill(buf, 0, n, 0.toByte())
                 // Voice Interruption OFF: while queued speech is still playing, send silence instead of the mic signal.
                 if (!allowBargeIn && SystemClock.elapsedRealtime() < playEndMs) java.util.Arrays.fill(buf, 0, n, 0.toByte())
                 var sum = 0.0

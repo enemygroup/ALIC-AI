@@ -59,6 +59,15 @@ data class AppSettings(
     val imageModel: String = "gemini-2.5-flash-image",
     val codingProvider: String = "gemini",   // gemini (default, free tier) or openai (ChatGPT)
     val openaiModel: String = "gpt-4o",
+    val liveWakeOnly: Boolean = true,
+    val appTheme: String = "",
+    val orbSize: Float = 1f,
+    val orbGlow: Float = 1f,
+    val orbSpeed: Float = 1f,
+    val orbDensity: Float = 1f,
+    val orbParticles: Boolean = true,
+    val orbGlowOn: Boolean = true,
+    val orbStyle: String = "dots",
     val clapEnabled: Boolean = false,
     val clapMode: String = "double",         // single, double
     val clapSensitivity: String = "medium"   // low, medium, high     // aurora, red, cyan, blue, purple

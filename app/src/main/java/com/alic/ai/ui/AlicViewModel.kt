@@ -130,7 +130,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         LiveSessionController.projectHook = { a -> startProject(a) }
         online = cm.activeNetwork != null
         try { cm.registerDefaultNetworkCallback(netCb, Handler(Looper.getMainLooper())) } catch (e: Exception) {}
-        viewModelScope.launch { settingsStore.flow.collect { settings = it; ThemeState.apply(it.themeMode, it.accent); settingsLoaded = true } }
+        viewModelScope.launch { settingsStore.flow.collect { settings = it; ThemeState.apply(it.themeMode, it.accent); ThemeState.orbStyle = it.orbStyle; ThemeState.palette = ThemePalettes.byId(it.appTheme); ThemeState.applyOrb(it); settingsLoaded = true } }
         viewModelScope.launch { snapshotFlow { LiveSessionController.lastError }.collect { e -> if (e != null) { toast = e; voiceNote = e; LiveSessionController.lastError = null } } }
         viewModelScope.launch {
             // a Live session saved its transcript to disk (possibly started by the wake word): refresh the history list
@@ -738,6 +738,9 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         val n = block(settings)
         settings = n
         ThemeState.apply(n.themeMode, n.accent)
+        ThemeState.orbStyle = n.orbStyle
+        ThemeState.palette = ThemePalettes.byId(n.appTheme)
+        ThemeState.applyOrb(n)
         viewModelScope.launch { settingsStore.update { n } }
     }
 

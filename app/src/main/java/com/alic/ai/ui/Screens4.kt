@@ -308,6 +308,9 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             SectionTitle("VOICE")
             ListRow(Icons.Filled.RecordVoiceOver, "Assistant persona", "ULTRON · Deep, powerful male voice (fixed)")
             ListRow(Icons.Filled.GraphicEq, "Voice", "Charon (deep male, fixed)")
+            ListRow(Icons.Filled.Hearing, "Reply only after “Hey Alic” (Live)", if (s.liveWakeOnly) "On: say Hey Alic first, then ask. Other voices are ignored." else "Off: ALIC answers any voice in Live") {
+                Switch(s.liveWakeOnly, { v -> vm.updateSettings { it.copy(liveWakeOnly = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
+            }
             ListRow(Icons.Filled.Campaign, "Voice interruption", if (s.voiceInterruption) "On: you can interrupt ALIC" else "Off: mic is muted while ALIC speaks") {
                 Switch(s.voiceInterruption, { v -> vm.updateSettings { it.copy(voiceInterruption = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
@@ -327,9 +330,26 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             ListRow(Icons.Filled.Layers, "Overlay permission", if (android.provider.Settings.canDrawOverlays(ctx)) "Allowed" else "Not allowed", onClick = { nav.navigate("permissions") })
 
             SectionTitle("APPEARANCE")
+            ListRow(Icons.Filled.Animation, "Orb Studio", "15 orb designs with size, glow, speed and particles", onClick = { nav.navigate("orbstudio") })
+            ListRow(Icons.Filled.Palette, "Theme Studio", "15 complete app themes. Tap one to apply.", onClick = { nav.navigate("themestudio") })
             ListRow(Icons.Filled.Palette, "Theme", when (s.themeMode) { "light" -> "Light"; "sunset" -> "Sunset"; else -> "Dark" }) {}
             ChipsRow(listOf("dark" to "Dark", "light" to "Light", "sunset" to "Sunset"), s.themeMode) { v -> vm.updateSettings { it.copy(themeMode = v) } }
             Spacer(Modifier.height(8.dp))
+            Text("Orb style", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ORB_STYLES.forEach { (id, label) ->
+                    val on = s.orbStyle == id
+                    Column(
+                        Modifier.width(96.dp).clip(RoundedCornerShape(16.dp))
+                            .border(if (on) 2.dp else 1.dp, if (on) C.Neon else C.Border, RoundedCornerShape(16.dp))
+                            .clickable { vm.updateSettings { it.copy(orbStyle = id) } }.padding(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(Modifier.size(80.dp)) { AlicOrb(OrbState.LIVE, 0f, animated = true, style = id) }
+                        Text(label, color = if (on) C.Text else C.Sub, fontSize = 12.sp)
+                    }
+                }
+            }
             Text("Accent", color = C.Sub, fontSize = 12.sp)
             AccentPicker(s.accent) { id -> vm.updateSettings { it.copy(accent = id) } }
             ListRow(Icons.Filled.Vibration, "Haptic feedback", if (s.haptics) "On" else "Off") {

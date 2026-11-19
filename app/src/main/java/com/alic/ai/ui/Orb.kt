@@ -4,27 +4,40 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils
 import com.alic.ai.data.OrbState
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
+
+/** The 15 orb designs. The id is what gets saved in settings. */
+data class OrbDesign(val id: String, val label: String)
+
+val ORB_STYLES: List<OrbDesign> = listOf(
+    OrbDesign("holo", "Holographic"), OrbDesign("galaxy", "Galaxy"), OrbDesign("glass", "Liquid Glass"),
+    OrbDesign("plasma", "Plasma"), OrbDesign("neon", "Neon"), OrbDesign("pearl", "Pearl"),
+    OrbDesign("fire", "Fire"), OrbDesign("cyber", "Cyber Core"), OrbDesign("aqua", "Aqua"),
+    OrbDesign("magic", "Magic"), OrbDesign("matrix", "Matrix"), OrbDesign("chrome", "Chrome"),
+    OrbDesign("aurora", "Aurora"), OrbDesign("particle", "Particle"), OrbDesign("reactor", "Reactor")
+)
+
+/** Old saved ids (dots, rings, waves, particles) map onto the new designs. */
+fun normalizeOrb(id: String): String = when (id) {
+    "dots", "particles" -> "particle"
+    "rings" -> "reactor"
+    "waves" -> "aqua"
+    else -> if (ORB_STYLES.any { it.id == id }) id else "particle"
+}
 
 private const val DOTS = 420
-private const val DEPTHS = 5
-private const val MAX_COLORS = 6
 
-/** Points evenly spread over a unit sphere (Fibonacci lattice), stored flat as x,y,z. */
 private val SPHERE: FloatArray by lazy {
     val a = FloatArray(DOTS * 3)
     for (i in 0 until DOTS) {
@@ -38,44 +51,277 @@ private val SPHERE: FloatArray by lazy {
     a
 }
 
-private class OrbScratch {
-    val pts = Array(DEPTHS * MAX_COLORS) { FloatArray(DOTS * 2) }
-    val cnt = IntArray(DEPTHS * MAX_COLORS)
-    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        style = android.graphics.Paint.Style.STROKE
-        strokeCap = android.graphics.Paint.Cap.ROUND
+/** Everything one frame of an orb design needs. */
+data class OrbFrame(
+    val c: Offset, val r: Float, val ph: Float, val lv: Float, val amp: Float, val tau: Float, val unit: Float,
+    val pal: List<Color>, val glow: Float, val dens: Float, val particles: Boolean, val dark: Boolean
+) {
+    fun col(i: Int): Color = pal[((i % pal.size) + pal.size) % pal.size]
+}
+
+private fun OrbFrame.count(base: Int): Int = (base * dens).toInt().coerceAtLeast(4)
+
+/** Outer glow for every design. Turned off when glow is disabled. */
+private fun DrawScope.halo(f: OrbFrame, color: Color) {
+    if (f.glow <= 0f) return
+    val rad = f.r * 1.45f
+    drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.30f * f.glow.coerceAtMost(1.5f)), Color.Transparent), center = f.c, radius = rad), radius = rad, center = f.c)
+}
+
+private fun DrawScope.styleHolo(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(a.copy(alpha = 0.12f), f.r, f.c)
+    drawCircle(a.copy(alpha = 0.7f), f.r, f.c, style = Stroke(1.6f * f.unit))
+    val n = f.count(16)
+    for (k in 0 until n) {
+        val y = f.c.y - f.r + 2f * f.r * ((k / n.toFloat() + f.ph) % 1f)
+        val dy = y - f.c.y
+        val half = sqrt(max(0f, f.r * f.r - dy * dy))
+        drawLine(if (k % 3 == 0) b.copy(alpha = 0.55f) else a.copy(alpha = 0.3f), Offset(f.c.x - half, y), Offset(f.c.x + half, y), strokeWidth = 1.2f * f.unit)
+    }
+    for (k in 0 until 3) {
+        val rot = (f.ph * f.tau + k * f.tau / 3f) * 57.2958f
+        val rr = f.r * (0.82f + 0.06f * k)
+        drawArc(b.copy(alpha = 0.8f), rot, 80f, false, topLeft = Offset(f.c.x - rr, f.c.y - rr), size = Size(rr * 2, rr * 2), style = Stroke(1.4f * f.unit, cap = StrokeCap.Round))
     }
 }
 
-private val DEPTH_ALPHA = floatArrayOf(0.16f, 0.32f, 0.52f, 0.76f, 1f)
-private val DEPTH_SIZE = floatArrayOf(1.4f, 2.1f, 3.0f, 4.0f, 5.2f)
+private fun DrawScope.styleGalaxy(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF2A0F4A), Color(0xFF0B0418)), center = f.c, radius = f.r), f.r, f.c)
+    val n = f.count(160)
+    for (i in 0 until n) {
+        val seed = ((i * 37) % 101) / 101f
+        val rr = f.r * 0.95f * sqrt(seed)
+        val arm = (i % 3) * f.tau / 3f
+        val ang = arm + rr / f.r * 3.2f + f.ph * f.tau * (1.2f - seed * 0.6f)
+        val p = Offset(f.c.x + cos(ang) * rr, f.c.y + sin(ang) * rr * 0.9f)
+        val col = if (i % 4 == 0) Color.White else if (i % 2 == 0) a else b
+        drawCircle(col.copy(alpha = 0.55f + 0.4f * seed), (0.8f + seed * 1.8f) * f.unit, p)
+    }
+}
 
-/**
- * Dotted 3D orb. Colours flow across the sphere over time (multicolour), a sweeping halo surrounds it, and
- * small coloured satellites orbit the core. All animation values are read in the draw phase, so the screen is
- * not recomposed every frame.
- */
+private fun DrawScope.styleGlass(f: OrbFrame) {
+    val a = f.col(0)
+    halo(f, a)
+    drawCircle(
+        Brush.linearGradient(listOf(Color.White.copy(alpha = 0.28f), a.copy(alpha = 0.10f), Color.Transparent),
+            start = Offset(f.c.x - f.r, f.c.y - f.r), end = Offset(f.c.x + f.r, f.c.y + f.r)),
+        f.r, f.c
+    )
+    drawCircle(a.copy(alpha = 0.6f), f.r, f.c, style = Stroke(2f * f.unit))
+    drawOval(Color.White.copy(alpha = 0.55f), topLeft = Offset(f.c.x - f.r * 0.55f, f.c.y - f.r * 0.6f), size = Size(f.r * 0.5f, f.r * 0.25f))
+    drawArc(a.copy(alpha = 0.5f), 200f, 60f, false, topLeft = Offset(f.c.x - f.r * 0.8f, f.c.y - f.r * 0.8f), size = Size(f.r * 1.6f, f.r * 1.6f), style = Stroke(3f * f.unit))
+}
+
+private fun DrawScope.stylePlasma(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Color(0xFF0A0420), f.r, f.c)
+    val bolts = f.count(7)
+    for (k in 0 until bolts) {
+        val base = k * f.tau / bolts + f.ph * f.tau * 0.5f
+        val path = Path()
+        for (s in 0..12) {
+            val rr = f.r * s / 12f
+            val jit = sin(s * 2.7f + f.ph * f.tau * 6f + k * 1.3f) * f.r * 0.09f * (0.4f + f.amp + f.lv)
+            val x = f.c.x + cos(base) * rr - sin(base) * jit
+            val y = f.c.y + sin(base) * rr + cos(base) * jit
+            if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, if (k % 2 == 0) a else b, style = Stroke(1.6f * f.unit, cap = StrokeCap.Round))
+    }
+}
+
+private fun DrawScope.styleNeon(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Color(0xFF05060C), f.r, f.c)
+    for (k in 0 until 4) {
+        val rr = f.r * (0.55f + 0.14f * k)
+        val col = if (k % 2 == 0) a else b
+        val alpha = (0.85f - k * 0.18f) * (0.85f + 0.15f * sin(f.ph * f.tau * 2 + k))
+        drawCircle(col.copy(alpha = alpha), rr, f.c, style = Stroke((4f - k * 0.6f) * f.unit))
+    }
+}
+
+private fun DrawScope.stylePearl(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1); val c3 = f.col(2)
+    halo(f, Color.White)
+    drawCircle(
+        Brush.radialGradient(listOf(Color.White, Color(0xFFF3E8F0), Color(0xFFD9E8F5)),
+            center = Offset(f.c.x - f.r * 0.25f, f.c.y - f.r * 0.3f), radius = f.r * 1.2f),
+        f.r, f.c
+    )
+    val tints = listOf(a, b, c3)
+    for (k in 0 until 3) {
+        val start = (f.ph * 360f * (1f + k * 0.2f)) + k * 120f
+        drawArc(tints[k].copy(alpha = 0.35f), start, 100f, false, topLeft = Offset(f.c.x - f.r * 0.9f, f.c.y - f.r * 0.9f), size = Size(f.r * 1.8f, f.r * 1.8f), style = Stroke(3f * f.unit, cap = StrokeCap.Round))
+    }
+}
+
+private fun DrawScope.styleFire(f: OrbFrame) {
+    halo(f, Color(0xFFFF5A1F))
+    drawCircle(Brush.radialGradient(listOf(Color(0xFFFFD27A), Color(0xFFFF5A1F), Color(0xFF7A0B0B)), center = f.c, radius = f.r), f.r, f.c)
+    val n = f.count(90)
+    for (i in 0 until n) {
+        val prog = (f.ph + i / n.toFloat()) % 1f
+        val spread = sin(i * 1.7f + f.ph * f.tau * 3f) * f.r * (0.2f + 0.5f * prog)
+        val p = Offset(f.c.x + spread, f.c.y + f.r * 0.9f - prog * f.r * 2.1f)
+        val col = if (prog < 0.5f) Color(0xFFFFE08A) else if (prog < 0.8f) Color(0xFFFF8A1F) else Color(0xFFFF2D2D)
+        drawCircle(col.copy(alpha = (1f - prog) * 0.9f), (1.5f + 2.5f * (1f - prog)) * f.unit, p)
+    }
+}
+
+private fun DrawScope.styleCyber(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Color(0xFF060A12), f.r, f.c)
+    for (k in 0 until 4) {
+        val rr = f.r * (0.45f + 0.15f * k)
+        val rot = f.ph * 360f * (if (k % 2 == 0) 1f else -1f) * (0.6f + k * 0.2f)
+        drawArc(a.copy(alpha = 0.9f), rot, 150f, false, topLeft = Offset(f.c.x - rr, f.c.y - rr), size = Size(rr * 2, rr * 2), style = Stroke(2f * f.unit, cap = StrokeCap.Round))
+        for (j in 0 until 12) {
+            val ang = j * (2f * PI.toFloat() / 12f) + rot / 57.2958f
+            drawLine(b.copy(alpha = 0.7f), Offset(f.c.x + cos(ang) * rr * 0.97f, f.c.y + sin(ang) * rr * 0.97f), Offset(f.c.x + cos(ang) * rr * 1.03f, f.c.y + sin(ang) * rr * 1.03f), 1.5f * f.unit)
+        }
+    }
+    drawCircle(b.copy(alpha = 0.6f + 0.4f * f.lv), f.r * 0.18f, f.c)
+}
+
+private fun DrawScope.styleAqua(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Color(0xFF031420), f.r, f.c)
+    val cols = 56
+    for (i in 0 until cols) {
+        val nx = -1f + 2f * i / cols
+        val x = f.c.x + nx * f.r
+        val half = sqrt(max(0f, 1f - nx * nx)) * f.r
+        val surf = f.c.y + f.r * 0.05f + sin(nx * 3f + f.ph * f.tau * 2f) * f.r * (0.05f + 0.1f * f.amp)
+        val bottom = f.c.y + half
+        if (surf < bottom) drawLine(if (i % 2 == 0) a.copy(alpha = 0.55f) else b.copy(alpha = 0.45f), Offset(x, surf), Offset(x, bottom), strokeWidth = 2f * f.r / cols + 1f)
+    }
+}
+
+private fun DrawScope.styleMagic(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1)
+    halo(f, a)
+    drawCircle(Brush.radialGradient(listOf(a.copy(alpha = 0.35f), Color(0xFF12051F)), center = f.c, radius = f.r), f.r, f.c)
+    for (arm in 0 until 3) {
+        val path = Path()
+        for (s in 0..40) {
+            val t = s / 40f
+            val rr = f.r * t
+            val ang = arm * f.tau / 3f + t * 4f + f.ph * f.tau
+            val x = f.c.x + cos(ang) * rr
+            val y = f.c.y + sin(ang) * rr
+            if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, b.copy(alpha = 0.7f), style = Stroke(2f * f.unit, cap = StrokeCap.Round))
+    }
+    val n = f.count(40)
+    for (i in 0 until n) {
+        val ang = i * 0.91f + f.ph * f.tau
+        val rr = f.r * (0.3f + 0.65f * (((i * 17) % 31) / 31f))
+        drawCircle(a.copy(alpha = 0.9f), (1f + (i % 3)) * f.unit, Offset(f.c.x + cos(ang) * rr, f.c.y + sin(ang) * rr))
+    }
+}
+
+private fun DrawScope.styleMatrix(f: OrbFrame) {
+    val g = f.col(0)
+    halo(f, g)
+    drawCircle(Color(0xFF020A04), f.r, f.c)
+    val cols = 16
+    for (j in 0 until cols) {
+        val nx = -1f + (j + 0.5f) * 2f / cols
+        val x = f.c.x + nx * f.r
+        val half = sqrt(max(0f, 1f - nx * nx)) * f.r
+        val drops = f.count(5)
+        for (q in 0 until drops) {
+            val prog = (f.ph * (0.6f + (j % 4) * 0.2f) + j * 0.137f + q / drops.toFloat()) % 1f
+            val y = f.c.y - half + prog * 2f * half
+            drawCircle(g.copy(alpha = 0.35f + 0.55f * (1f - prog)), 1.6f * f.unit, Offset(x, y))
+        }
+    }
+}
+
+private fun DrawScope.styleChrome(f: OrbFrame) {
+    halo(f, Color(0xFFBFC7D5))
+    drawCircle(
+        Brush.linearGradient(listOf(Color(0xFFF5F7FA), Color(0xFF6B7280), Color(0xFF1C1F26), Color(0xFFD1D5DB)),
+            start = Offset(f.c.x - f.r, f.c.y - f.r), end = Offset(f.c.x + f.r, f.c.y + f.r)),
+        f.r, f.c
+    )
+    for (k in 0 until 5) {
+        val y = f.c.y - f.r + 2f * f.r * ((k / 5f + f.ph) % 1f)
+        val dy = y - f.c.y
+        val half = sqrt(max(0f, f.r * f.r - dy * dy))
+        drawLine(Color.White.copy(alpha = 0.35f), Offset(f.c.x - half, y), Offset(f.c.x + half, y), 2f * f.unit)
+    }
+    drawCircle(Color(0xFF9CA3AF), f.r, f.c, style = Stroke(2f * f.unit))
+}
+
+private fun DrawScope.styleAurora(f: OrbFrame) {
+    halo(f, f.col(0))
+    drawCircle(Color(0xFF050714), f.r, f.c)
+    for (k in 0 until 6) {
+        val path = Path()
+        for (s in 0..40) {
+            val nx = -1f + 2f * s / 40
+            val x = f.c.x + nx * f.r
+            val y = f.c.y + (k - 2.5f) * f.r * 0.22f + sin(nx * 3.2f + f.ph * f.tau + k * 0.8f) * f.r * (0.12f + 0.1f * f.lv)
+            if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, f.col(k).copy(alpha = 0.65f), style = Stroke(3f * f.unit, cap = StrokeCap.Round))
+    }
+}
+
+private fun DrawScope.styleParticle(f: OrbFrame) {
+    halo(f, f.col(0))
+    var n = f.count(DOTS)
+    if (!f.particles) n /= 3
+    for (i in 0 until n) {
+        val idx = (i % DOTS) * 3
+        val d = 1f + f.amp * sin(f.ph * f.tau * 3 + SPHERE[idx + 1] * 7f)
+        val x = SPHERE[idx] * d
+        val y = SPHERE[idx + 1] * d
+        val depth = ((SPHERE[idx + 2] + 1f) / 2f).coerceIn(0f, 1f)
+        drawCircle(f.col(i).copy(alpha = 0.15f + 0.85f * depth), (0.8f + 2f * depth) * f.unit, Offset(f.c.x + x * f.r, f.c.y + y * f.r))
+    }
+}
+
+private fun DrawScope.styleReactor(f: OrbFrame) {
+    val red = f.col(0)
+    halo(f, red)
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF2A0606), Color(0xFF0C0404)), center = f.c, radius = f.r), f.r, f.c)
+    for (k in 0 until 3) {
+        val rr = f.r * (0.5f + 0.2f * k)
+        val rot = f.ph * 360f * (if (k % 2 == 0) 1f else -1f) * (0.8f + k * 0.3f)
+        for (seg in 0 until 6) {
+            drawArc(red.copy(alpha = 0.9f), rot + seg * 60f, 40f, false, topLeft = Offset(f.c.x - rr, f.c.y - rr), size = Size(rr * 2, rr * 2), style = Stroke(4f * f.unit, cap = StrokeCap.Butt))
+        }
+    }
+    val pulse = 0.7f + 0.3f * sin(f.ph * f.tau * 2f) + f.lv * 0.3f
+    drawCircle(Brush.radialGradient(listOf(Color.White, red, Color.Transparent), center = f.c, radius = f.r * 0.3f * pulse), f.r * 0.3f * pulse, f.c)
+}
+
+/** Shared lifecycle-safe orb. Animation values are read in the draw phase only. */
 @Composable
 fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animated: Boolean = true) {
     val t = rememberInfiniteTransition(label = "orb")
     val phaseS = t.animateFloat(0f, 1f, infiniteRepeatable(tween(12000, easing = LinearEasing)), label = "phase")
     val breatheS = t.animateFloat(0.95f, 1.05f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
     val lvS = animateFloatAsState(level, tween(120), label = "level")
-    val spin = when (state) {
-        OrbState.IDLE -> 1; OrbState.LISTENING -> 1; OrbState.THINKING -> 6; OrbState.SPEAKING -> 2; OrbState.LIVE -> 2
-    }
-    val scratch = remember { OrbScratch() }
 
     Canvas(modifier.aspectRatio(1f)) {
-        val ph = if (animated) phaseS.value else 0f
-        val lv = lvS.value
-        val pal = C.orb.take(MAX_COLORS)
-        val nPal = pal.size
-        val isDark = ThemeState.isDark
-        val c = center
         val tau = (2 * PI).toFloat()
+        val ph = if (animated) (phaseS.value * ThemeState.orbSpeed) % 1f else 0f
+        val lv = lvS.value
         val unit = 1.dp.toPx()
-        val base = size.minDimension / 2f * 0.80f
+        val base = size.minDimension / 2f * 0.80f * ThemeState.orbSize
         val pulse = when (state) {
             OrbState.IDLE -> if (animated) breatheS.value else 1f
             OrbState.LISTENING -> 1f + lv * 0.10f
@@ -87,78 +333,27 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
             OrbState.IDLE -> 0.025f; OrbState.LISTENING -> 0.04f + lv * 0.30f; OrbState.THINKING -> 0.08f
             OrbState.SPEAKING -> 0.13f + lv * 0.10f; OrbState.LIVE -> 0.08f + lv * 0.30f
         }
-        val r = base * pulse
-
-        // Sweeping multicolour halo
-        drawCircle(
-            Brush.sweepGradient(pal.map { it.copy(alpha = if (isDark) 0.30f else 0.22f) } + pal[0].copy(alpha = 0.30f), c),
-            radius = r * 1.35f, center = c
+        val frame = OrbFrame(
+            c = center, r = base * pulse, ph = ph, lv = lv, amp = amp, tau = tau, unit = unit,
+            pal = C.orb.take(6), glow = if (ThemeState.orbGlowOn) ThemeState.orbGlow else 0f,
+            dens = ThemeState.orbDensity, particles = ThemeState.orbParticles, dark = ThemeState.isDark
         )
-
-        val ay = ph * tau * spin
-        val tilt = 0.40f
-        val cy = cos(ay); val sy = sin(ay)
-        val ct = cos(tilt); val st = sin(tilt)
-        val wave = ph * tau * 3
-
-        java.util.Arrays.fill(scratch.cnt, 0)
-        for (i in 0 until DOTS) {
-            val px = SPHERE[i * 3]; val py = SPHERE[i * 3 + 1]; val pz = SPHERE[i * 3 + 2]
-            val d = 1f + amp * sin(wave + py * 7f + px * 5f)
-            val x0 = px * d; val y0 = py * d; val z0 = pz * d
-            val x1 = x0 * cy + z0 * sy
-            val z1 = -x0 * sy + z0 * cy
-            val y2 = y0 * ct - z1 * st
-            val z2 = y0 * st + z1 * ct
-            val depth = ((z2 + 1f) / 2f).coerceIn(0f, 0.999f)
-            val persp = 1f / (1f - z2 * 0.22f)
-            val di = (depth * DEPTHS).toInt()
-            // colour flows over time: index moves with the animation phase
-            val colorT = ((py + 1f) / 2f) * 0.7f + ((px + 1f) / 2f) * 0.3f
-            val ci = ((colorT + ph) * nPal).toInt() % nPal
-            val b = di * MAX_COLORS + ci
-            val n = scratch.cnt[b]
-            scratch.pts[b][n * 2] = c.x + x1 * r * persp
-            scratch.pts[b][n * 2 + 1] = c.y + y2 * r * persp
-            scratch.cnt[b] = n + 1
+        when (normalizeOrb(ThemeState.orbStyle)) {
+            "holo" -> styleHolo(frame)
+            "galaxy" -> styleGalaxy(frame)
+            "glass" -> styleGlass(frame)
+            "plasma" -> stylePlasma(frame)
+            "neon" -> styleNeon(frame)
+            "pearl" -> stylePearl(frame)
+            "fire" -> styleFire(frame)
+            "cyber" -> styleCyber(frame)
+            "aqua" -> styleAqua(frame)
+            "magic" -> styleMagic(frame)
+            "matrix" -> styleMatrix(frame)
+            "chrome" -> styleChrome(frame)
+            "aurora" -> styleAurora(frame)
+            "reactor" -> styleReactor(frame)
+            else -> styleParticle(frame)
         }
-
-        val shimmer = if (state == OrbState.THINKING) 0.82f + 0.18f * sin(ph * tau * 8) else 1f
-        val grow = 1f + lv * 0.35f
-        drawIntoCanvas { canvas ->
-            val nc = canvas.nativeCanvas
-            val p = scratch.paint
-            for (di in 0 until DEPTHS) {
-                for (ci in 0 until nPal) {
-                    val b = di * MAX_COLORS + ci
-                    val n = scratch.cnt[b]
-                    if (n == 0) continue
-                    var argb = pal[ci].toArgb()
-                    if (isDark && di == DEPTHS - 1) argb = ColorUtils.blendARGB(argb, 0xFFFFFFFF.toInt(), 0.40f)
-                    val a = (255 * DEPTH_ALPHA[di] * shimmer).toInt().coerceIn(0, 255)
-                    p.color = (argb and 0x00FFFFFF) or (a shl 24)
-                    p.strokeWidth = DEPTH_SIZE[di] * unit * grow
-                    nc.drawPoints(scratch.pts[b], 0, n * 2, p)
-                }
-            }
-        }
-
-        // Orbiting satellites in the palette colours
-        for (k in 0 until 10) {
-            val a = ph * tau * (1f + (k % 4) * 0.12f) + k * (tau / 10f)
-            val rr = r * (1.22f + 0.12f * sin(ph * tau * 2 + k))
-            val sx = c.x + cos(a) * rr
-            val sy2 = c.y + sin(a) * rr * 0.42f
-            val col = pal[k % nPal]
-            drawCircle(col.copy(alpha = 0.95f), radius = (3f + (k % 3)) * unit, center = Offset(sx, sy2))
-            drawCircle(col.copy(alpha = 0.20f), radius = (9f + (k % 3) * 2f) * unit, center = Offset(sx, sy2))
-        }
-
-        // core spark
-        val spark = if (isDark) Color.White.copy(alpha = 0.55f) else pal[0].copy(alpha = 0.45f)
-        drawCircle(
-            Brush.radialGradient(listOf(spark, pal[0].copy(alpha = 0.22f), Color.Transparent), center = c, radius = r * 0.30f),
-            radius = r * 0.30f, center = c
-        )
     }
 }

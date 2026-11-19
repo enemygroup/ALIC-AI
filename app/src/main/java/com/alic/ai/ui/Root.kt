@@ -109,6 +109,8 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("imageanalysis") { ImageAnalysisScreen(vm, nav) }
             composable("wa") { WaScreen(nav) }
             composable("rules") { RulesScreen(nav) }
+            composable("themestudio") { ThemeStudioScreen(vm, nav) }
+            composable("orbstudio") { OrbStudioScreen(vm, nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }

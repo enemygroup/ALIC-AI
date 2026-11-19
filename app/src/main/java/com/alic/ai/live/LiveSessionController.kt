@@ -18,6 +18,7 @@ import com.alic.ai.device.ToolExecutor
 import com.alic.ai.service.SessionBus
 import com.alic.ai.service.VoiceSessionService
 import com.alic.ai.wake.WakeGate
+import com.alic.ai.wake.LiveWakeGate
 import com.alic.ai.wake.WakeWordService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -76,6 +77,7 @@ object LiveSessionController {
     private val secure: SecureStore by lazy { SecureStore(app!!) }
     @Volatile private var settingsLoaded = false
     private var ticker: Job? = null
+    private var wakeGate: LiveWakeGate? = null
     private val userBuf = StringBuilder()
     private var userSpoke = false
     private var lastLoudMs = 0L
@@ -109,7 +111,6 @@ object LiveSessionController {
             if (ContextCompat.checkSelfPermission(a, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 return StartResult.MIC_DENIED
             }
-            if (!settingsLoaded) settings = runBlocking(Dispatchers.IO) { settingsStore.flow.first() }
             owner = ownerName
             active = true
             muted = false; live.muted = false
@@ -123,6 +124,9 @@ object LiveSessionController {
         // WakeWordService (when running) already is a microphone foreground service
         if (WakeWordService.instance == null) VoiceSessionService.start(a)
         live.allowBargeIn = settings.voiceInterruption
+        wakeGate?.close()
+        wakeGate = if (settings.liveWakeOnly) LiveWakeGate(a) else null
+        live.audioGate = wakeGate?.let { g -> { b: ByteArray, n: Int -> g.feed(b, n) } }
         live.start(
             LiveConfig(
                 secure.apiKey, settings.baseUrl, settings.liveModel, "Charon",
@@ -154,6 +158,8 @@ object LiveSessionController {
         }
         ticker?.cancel(); ticker = null
         live.stop(silent = true)            // releases Live AudioRecord / AudioTrack
+        live.audioGate = null
+        wakeGate?.close(); wakeGate = null
         connected = false; level = 0f; phase = Phase.LISTENING
         routeAudio(false)
         VoiceSessionService.stop(a)

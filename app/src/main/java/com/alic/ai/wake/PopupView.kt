@@ -1,6 +1,5 @@
 package com.alic.ai.wake
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -11,15 +10,12 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.compose.ui.graphics.toArgb
-import com.alic.ai.live.LiveSessionController
 import com.alic.ai.live.LiveSessionController.Phase
 import com.alic.ai.ui.ThemeState
 import kotlin.math.PI
@@ -29,27 +25,57 @@ import kotlin.math.sin
 private fun orbColors(): IntArray = ThemeState.accent.orb.map { it.toArgb() }.toIntArray()
 private fun withAlpha(c: Int, a: Int) = (c and 0x00FFFFFF) or (a shl 24)
 private const val TAU = (2 * PI).toFloat()
+private const val FRAME_MS = 33L
 
-/** Glowing circular orb. */
+/** Shared frame clock for the popup: 30 frames per second, stopped when the view detaches. */
+private class FrameLoop(private val onFrame: (Float) -> Unit) {
+    private val h = Handler(Looper.getMainLooper())
+    private var t = 0f
+    private var running = false
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!running) return
+            t = (t + 0.0235f) % 1f
+            onFrame(t)
+            h.postDelayed(this, FRAME_MS)
+        }
+    }
+    fun start() { if (!running) { running = true; h.post(tick) } }
+    fun stop() { running = false; h.removeCallbacks(tick) }
+}
+
+/** Glowing circular orb. Gradients are cached and rebuilt only when the size changes. */
 class OrbView(ctx: Context) : View(ctx) {
     var t = 0f
     var level = 0f
     var phase = Phase.LISTENING
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var outer: RadialGradient? = null
+    private var core: RadialGradient? = null
+    private var builtFor = -1
+
+    private fun build(r: Float, pal: IntArray) {
+        val cx = width / 2f
+        val cy = height / 2f
+        outer = RadialGradient(cx, cy, r, intArrayOf(withAlpha(pal[0], 0xAA), withAlpha(pal.last(), 0x44), Color.TRANSPARENT), floatArrayOf(0.3f, 0.7f, 1f), Shader.TileMode.CLAMP)
+        core = RadialGradient(cx, cy, r * 0.62f, intArrayOf(Color.WHITE, pal[0], pal[pal.size / 2], pal.last()), floatArrayOf(0f, 0.35f, 0.7f, 1f), Shader.TileMode.CLAMP)
+        builtFor = width * 10000 + height
+    }
 
     override fun onDraw(c: Canvas) {
         val cx = width / 2f; val cy = height / 2f; val r = min(width, height) / 2f
         val pal = orbColors()
+        if (builtFor != width * 10000 + height) build(r, pal)
         val pulse = when (phase) {
             Phase.SPEAKING -> 0.85f + 0.10f * sin(t * TAU * 2)
             Phase.THINKING -> 0.80f + 0.06f * sin(t * TAU * 3)
             Phase.LISTENING -> 0.72f + 0.28f * level.coerceIn(0f, 1f)
         }
         p.style = Paint.Style.FILL
-        p.shader = RadialGradient(cx, cy, r, intArrayOf(withAlpha(pal[0], 0xAA), withAlpha(pal.last(), 0x44), Color.TRANSPARENT), floatArrayOf(0.3f, 0.7f, 1f), Shader.TileMode.CLAMP)
+        p.shader = outer
         c.drawCircle(cx, cy, r, p)
         val cr = r * 0.62f * pulse
-        p.shader = RadialGradient(cx, cy, cr, intArrayOf(Color.WHITE, pal[0], pal[pal.size / 2], pal.last()), floatArrayOf(0f, 0.35f, 0.7f, 1f), Shader.TileMode.CLAMP)
+        p.shader = core
         c.drawCircle(cx, cy, cr, p)
         p.shader = null
         p.style = Paint.Style.STROKE
@@ -68,7 +94,7 @@ class WaveView(ctx: Context) : View(ctx) {
 
     override fun onDraw(c: Canvas) {
         val pal = orbColors()
-        val n = 26
+        val n = 22
         val slot = width / n.toFloat()
         val bw = slot * 0.55f
         val amp = when (phase) { Phase.LISTENING -> 0.10f + level.coerceIn(0f, 1f) * 0.9f; Phase.THINKING -> 0.18f; Phase.SPEAKING -> 0.65f }
@@ -83,8 +109,8 @@ class WaveView(ctx: Context) : View(ctx) {
 }
 
 /**
- * The compact dark card: orb, "ALIC AI" title, state label, waveform and a × button. No text input.
- * Shared by the WindowManager overlay and the VoiceInteractionSession content view.
+ * The compact dark card: orb, "ALIC AI" title, state label, waveform and a × button. Shared by the WindowManager
+ * overlay. It runs a 30 fps loop only while attached, and stops it on detach so nothing leaks.
  */
 class PopupView(ctx: Context, private val entranceAnimation: Boolean, private val onClose: () -> Unit) : FrameLayout(ctx) {
     private val d = ctx.resources.displayMetrics.density
@@ -92,8 +118,11 @@ class PopupView(ctx: Context, private val entranceAnimation: Boolean, private va
     private val orb = OrbView(ctx)
     private val wave = WaveView(ctx)
     private val stateText = TextView(ctx)
-    private var anim: ValueAnimator? = null
     private var shownPhase: Phase? = null
+    private val frames = FrameLoop { t ->
+        orb.t = t; wave.t = t
+        orb.invalidate(); wave.invalidate()
+    }
 
     init {
         val card = LinearLayout(ctx).apply {
@@ -137,21 +166,12 @@ class PopupView(ctx: Context, private val entranceAnimation: Boolean, private va
         animate().alpha(1f).translationY(0f).setDuration(220).start()
     }
 
-    private fun startAnim() {
-        if (anim != null) return
-        anim = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 1400; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
-            addUpdateListener { orb.t = it.animatedValue as Float; wave.t = orb.t; orb.invalidate(); wave.invalidate() }
-            start()
-        }
-    }
-
-    /** Cancels animations/callbacks. Safe to call more than once. */
+    /** Stops the frame loop and cancels view animations. Safe to call more than once. */
     fun release() {
-        anim?.cancel(); anim = null
+        frames.stop()
         animate().cancel()
     }
 
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); startAnim() }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); frames.start() }
     override fun onDetachedFromWindow() { release(); super.onDetachedFromWindow() }
 }

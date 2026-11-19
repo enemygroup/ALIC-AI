@@ -118,8 +118,7 @@ object CallMonitor {
 
     private fun finish(p: BroadcastReceiver.PendingResult?) { try { p?.finish() } catch (e: Exception) {} }
 
-    private fun settings(ctx: Context): AppSettings =
-        try { runBlocking(Dispatchers.IO) { SettingsStore(ctx).flow.first() } } catch (e: Exception) { AppSettings() }
+    private fun settings(ctx: Context): AppSettings = com.alic.ai.live.LiveSessionController.settings
 
     private fun has(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
 
