@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,7 @@ import kotlin.math.*
 data class OrbDesign(val id: String, val label: String)
 
 val ORB_STYLES: List<OrbDesign> = listOf(
+    OrbDesign("alic_a", "A (ALIC Premium)"),
     OrbDesign("holo", "Holographic"), OrbDesign("galaxy", "Galaxy"), OrbDesign("glass", "Liquid Glass"),
     OrbDesign("plasma", "Plasma"), OrbDesign("neon", "Neon"), OrbDesign("pearl", "Pearl"),
     OrbDesign("fire", "Fire"), OrbDesign("cyber", "Cyber Core"), OrbDesign("aqua", "Aqua"),
@@ -33,7 +35,7 @@ fun normalizeOrb(id: String): String = when (id) {
     "dots", "particles" -> "particle"
     "rings" -> "reactor"
     "waves" -> "aqua"
-    else -> if (ORB_STYLES.any { it.id == id }) id else "particle"
+    else -> if (ORB_STYLES.any { it.id == id }) id else "alic_a"
 }
 
 private const val DOTS = 420
@@ -310,7 +312,7 @@ private fun DrawScope.styleReactor(f: OrbFrame) {
 
 /** Shared lifecycle-safe orb. Animation values are read in the draw phase only. */
 @Composable
-fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animated: Boolean = true, style: String? = null) {
+fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animated: Boolean = true) {
     val t = rememberInfiniteTransition(label = "orb")
     val phaseS = t.animateFloat(0f, 1f, infiniteRepeatable(tween(12000, easing = LinearEasing)), label = "phase")
     val breatheS = t.animateFloat(0.95f, 1.05f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
@@ -338,7 +340,7 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
             pal = C.orb.take(6), glow = if (ThemeState.orbGlowOn) ThemeState.orbGlow else 0f,
             dens = ThemeState.orbDensity, particles = ThemeState.orbParticles, dark = ThemeState.isDark
         )
-        when (normalizeOrb(style ?: ThemeState.orbStyle)) {
+        when (normalizeOrb(ThemeState.orbStyle)) {
             "holo" -> styleHolo(frame)
             "galaxy" -> styleGalaxy(frame)
             "glass" -> styleGlass(frame)
@@ -353,7 +355,49 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
             "chrome" -> styleChrome(frame)
             "aurora" -> styleAurora(frame)
             "reactor" -> styleReactor(frame)
+            "alic_a" -> styleAlicA(frame)
             else -> styleParticle(frame)
+        }
+    }
+}
+
+/** Premium "A" orb: glossy 3D sphere, multicolour rings and energy, the ALIC "A" mark at the centre, orbiting sparks. */
+private fun DrawScope.styleAlicA(f: OrbFrame) {
+    val a = f.col(0); val b = f.col(1); val c2 = f.col(2)
+    for (k in 0 until 3) {
+        val rr = f.r * (1.16f + 0.12f * k + 0.03f * sin(f.ph * f.tau * 2 + k))
+        drawCircle(f.col(k + 1).copy(alpha = (0.4f - k * 0.1f) * f.glow.coerceAtMost(1.5f)), rr, f.c, style = Stroke((3f - k) * f.unit))
+    }
+    halo(f, a)
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF0A1A1F), Color(0xFF020609)), center = f.c, radius = f.r), f.r, f.c)
+    drawCircle(
+        Brush.radialGradient(listOf(a.copy(alpha = 0.45f), Color.Transparent),
+            center = Offset(f.c.x - f.r * 0.35f, f.c.y - f.r * 0.4f), radius = f.r * 1.1f),
+        f.r, f.c
+    )
+    for (k in 0 until 3) {
+        val rr = f.r * (0.55f + 0.14f * k)
+        val rot = (f.ph * f.tau * (k + 1) * 0.5f) * 57.2958f + k * 90f
+        drawArc(f.col(k).copy(alpha = 0.7f), rot, 110f, false, topLeft = Offset(f.c.x - rr, f.c.y - rr), size = Size(rr * 2, rr * 2), style = Stroke(2f * f.unit, cap = StrokeCap.Round))
+    }
+    val w = f.r * 0.9f
+    val left = Offset(f.c.x - w * 0.42f, f.c.y + w * 0.42f)
+    val top = Offset(f.c.x, f.c.y - w * 0.45f)
+    val right = Offset(f.c.x + w * 0.42f, f.c.y + w * 0.42f)
+    val leg = Path().apply { moveTo(left.x, left.y); lineTo(top.x, top.y); lineTo(right.x, right.y) }
+    drawPath(leg, Brush.linearGradient(listOf(a, b, c2), start = left, end = right), style = Stroke(w * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    val bar = Path().apply {
+        moveTo(f.c.x - w * 0.22f, f.c.y + w * 0.16f)
+        quadraticBezierTo(f.c.x, f.c.y + w * 0.02f, f.c.x + w * 0.26f, f.c.y + w * 0.18f)
+    }
+    drawPath(bar, b, style = Stroke(w * 0.09f, cap = StrokeCap.Round))
+    if (f.particles) {
+        val n = f.count(24)
+        for (i in 0 until n) {
+            val dir = if (i % 2 == 0) 1f else -1f
+            val ang = i * (f.tau / n) + f.ph * f.tau * dir * 0.7f
+            val rr = f.r * (1.05f + 0.25f * ((i % 5) / 5f))
+            drawCircle(f.col(i).copy(alpha = 0.9f), (1.2f + (i % 3)) * f.unit, Offset(f.c.x + cos(ang) * rr, f.c.y + sin(ang) * rr * 0.7f))
         }
     }
 }

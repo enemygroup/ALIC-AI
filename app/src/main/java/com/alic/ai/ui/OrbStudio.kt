@@ -23,7 +23,7 @@ fun OrbStudioScreen(vm: AlicViewModel, nav: NavController) {
         ScreenHeader("Orb Studio", onBack = { nav.popBackStack() }) {
             TextButton(onClick = {
                 vm.updateSettings {
-                    it.copy(orbStyle = "particle", orbSize = 1f, orbGlow = 1f, orbSpeed = 1f, orbDensity = 1f, orbParticles = true, orbGlowOn = true)
+                    it.copy(orbStyle = "alic_a", orbSize = 1f, orbGlow = 1f, orbSpeed = 1f, orbDensity = 1f, orbParticles = true, orbGlowOn = true)
                 }
             }) { Text("Reset", color = C.Neon) }
         }

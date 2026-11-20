@@ -1,0 +1,19 @@
+ALIC AI - GitHub se APK Build karne ka tarika
+
+1) GitHub par ek PRIVATE repository banayein: alic-ai-android
+2) Is ZIP ke andar ALIC-AI folder ke CONTENTS upload karein. Dhyan rahe .github folder bhi upload ho.
+3) Repository ke main page par .github/workflows/android.yml file dikhni chahiye.
+4) GitHub > Actions tab kholein.
+5) "Build ALIC AI Android APK" workflow select karein.
+6) "Run workflow" dabayein; branch main select karke confirm karein.
+7) Build complete hone par green tick par click karein.
+8) Neeche Artifacts section se ALIC-AI-debug-apk.zip download karein.
+9) ZIP extract karke app-debug.apk phone mein install karein.
+
+Agar push par build chalana hai, source files main branch par commit/push karein.
+
+IMPORTANT:
+- Ye workflow current Android source ka DEBUG APK banata hai.
+- Ye abhi Firebase Authentication / Firestore license activation implement nahi karta. Firebase config file include hai, lekin Firebase SDK integration aur secure backend alag development step hai.
+- Debug APK testing ke liye hai. Public release ke liye apni private signing keystore aur GitHub Actions Secrets set karne honge.
+- google-services.json Android client config hai; ise GitHub repo mein rakhna generally expected hai, lekin Admin SDK private key, service-account JSON, passwords ya API secrets kabhi commit na karein.

@@ -59,7 +59,7 @@ object ThemeState {
     var accentId by mutableStateOf("emerald")
     /** Full colour set chosen in Theme Studio; null = built-in mode and accent. */
     var palette by mutableStateOf<Palette?>(null)
-    var orbStyle by mutableStateOf("particle")
+    var orbStyle by mutableStateOf("alic_a")
     var orbSize by mutableStateOf(1f)
     var orbGlow by mutableStateOf(1f)
     var orbSpeed by mutableStateOf(1f)
