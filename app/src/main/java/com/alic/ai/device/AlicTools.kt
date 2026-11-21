@@ -139,7 +139,17 @@ class ToolExecutor(private val ctx: Context, private val launcher: AppLauncher) 
     private fun playOrSearch(q: String, music: Boolean): String {
         val key = SecureStore(ctx).youtubeKey
         if (key.isNotBlank()) return YouTubePlayer.playFirst(ctx, key, q, music)
-        return launcher.youtube(q, music) + " Add a free YouTube key in Settings to play it directly."
+        launcher.youtube(q, music)
+        if (AlicAccessibilityService.instance == null) {
+            return "Searched YouTube for $q. Turn on ALIC's Accessibility to start the first result automatically, or add a YouTube key in Settings."
+        }
+        Thread.sleep(3500)
+        val tapped = AlicAccessibilityService.clickByLabel { l ->
+            val x = l.lowercase()
+            (x.contains(" views") || x.contains(" ago")) && x.contains(" by ")
+        }
+        return if (tapped) "Playing the first result for $q."
+        else "Searched YouTube for $q. Tap the first video to play it, or add a YouTube key in Settings for direct play."
     }
 
     private fun readNotifications(limit: Int): String {

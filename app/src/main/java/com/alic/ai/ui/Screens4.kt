@@ -359,7 +359,7 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             ListRow(Icons.Filled.Chat, "WhatsApp Automation", "Off by default. Smart replies for one-to-one chats", onClick = { nav.navigate("wa") })
 
             SectionTitle("ABOUT")
-            ListRow(Icons.Filled.Info, "About ALIC AI", "Version 1.0.0 · THE POWER OF INTELLIGENCE", onClick = { doc = "about" })
+            ListRow(Icons.Filled.Info, "About ALIC AI", "Developer: Rohit · Version 1.0.0 · THE POWER OF INTELLIGENCE", onClick = { doc = "about" })
             ListRow(Icons.Filled.Policy, "Privacy policy", null, onClick = { doc = "privacy" })
             ListRow(Icons.Filled.Gavel, "Terms and conditions", null, onClick = { doc = "terms" })
         }

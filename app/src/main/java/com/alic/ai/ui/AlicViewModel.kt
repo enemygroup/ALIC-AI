@@ -217,7 +217,7 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun runCommand(c: Command) {
-        if (c is Command.YouTube && secure.youtubeKey.isNotBlank()) {
+        if (c is Command.YouTube) {
             viewModelScope.launch {
                 val r = withContext(Dispatchers.IO) { tools.run("youtube_search", JSONObject().put("query", c.query).put("music", c.music)) }
                 messages = messages + ChatMessage(role = "model", text = r)
