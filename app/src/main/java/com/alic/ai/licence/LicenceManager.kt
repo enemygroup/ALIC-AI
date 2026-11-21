@@ -1,6 +1,7 @@
 package com.alic.ai.licence
 
 import android.content.Context
+import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -43,6 +44,20 @@ class LicenceManager(private val ctx: Context) {
         }
     }
 
+    /** Sends a password reset email. Returns an error text, or null when the email was sent. */
+    suspend fun resetPassword(email: String): String? {
+        if (!configured()) return "Firebase is not configured in this build."
+        return try {
+            FirebaseAuth.getInstance().sendPasswordResetEmail(email.trim()).await()
+            null
+        } catch (e: Exception) {
+            e.message ?: "Could not send the reset email."
+        }
+    }
+
+    fun savedKey(): String = prefs.getString("key", "") ?: ""
+    fun savedExpiry(): Long = prefs.getLong("exp", 0L)
+
     fun signOut() {
         if (configured()) FirebaseAuth.getInstance().signOut()
         prefs.edit().clear().apply()
@@ -79,7 +94,12 @@ class LicenceManager(private val ctx: Context) {
             val bound = snap.getString("boundUid")
             if (bound == null) {
                 if (!bind) return LicenceResult.Denied("This key is not activated yet.")
-                ref.update(mapOf("boundUid" to uid, "boundAt" to FieldValue.serverTimestamp())).await()
+                ref.update(mapOf(
+                    "boundUid" to uid,
+                    "boundAt" to FieldValue.serverTimestamp(),
+                    "boundEmail" to (FirebaseAuth.getInstance().currentUser?.email ?: ""),
+                    "boundModel" to "${Build.MANUFACTURER} ${Build.MODEL}"
+                )).await()
             } else if (bound != uid) {
                 return LicenceResult.Denied("This key is already used on another account.")
             }
