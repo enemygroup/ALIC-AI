@@ -361,20 +361,21 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
     }
 }
 
-/** Premium "A" orb: glossy 3D sphere, multicolour rings and energy, the ALIC "A" mark at the centre, orbiting sparks. */
+/** Premium "A" orb: glossy sphere, breathing energy core, multicolour rim, glowing ALIC "A" mark, orbiting sparks. */
 private fun DrawScope.styleAlicA(f: OrbFrame) {
     val a = f.col(0); val b = f.col(1); val c2 = f.col(2)
+    val g = f.glow.coerceAtMost(1.5f)
     for (k in 0 until 3) {
-        val rr = f.r * (1.16f + 0.12f * k + 0.03f * sin(f.ph * f.tau * 2 + k))
-        drawCircle(f.col(k + 1).copy(alpha = (0.4f - k * 0.1f) * f.glow.coerceAtMost(1.5f)), rr, f.c, style = Stroke((3f - k) * f.unit))
+        val rr = f.r * (1.14f + 0.12f * k + 0.03f * sin(f.ph * f.tau * 2 + k))
+        drawCircle(f.col(k + 1).copy(alpha = (0.45f - k * 0.12f) * g), rr, f.c, style = Stroke((3f - k) * f.unit))
     }
     halo(f, a)
-    drawCircle(Brush.radialGradient(listOf(Color(0xFF0A1A1F), Color(0xFF020609)), center = f.c, radius = f.r), f.r, f.c)
-    drawCircle(
-        Brush.radialGradient(listOf(a.copy(alpha = 0.45f), Color.Transparent),
-            center = Offset(f.c.x - f.r * 0.35f, f.c.y - f.r * 0.4f), radius = f.r * 1.1f),
-        f.r, f.c
-    )
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF0C2026), Color(0xFF020609)), center = f.c, radius = f.r), f.r, f.c)
+    val coreR = f.r * (0.45f + 0.15f * f.lv + 0.04f * sin(f.ph * f.tau * 2))
+    drawCircle(Brush.radialGradient(listOf(a.copy(alpha = 0.5f), b.copy(alpha = 0.15f), Color.Transparent), center = f.c, radius = coreR), coreR, f.c)
+    drawCircle(Brush.sweepGradient(listOf(a, b, c2, a), f.c), f.r, f.c, style = Stroke(3f * f.unit))
+    val hl = Offset(f.c.x - f.r * 0.35f, f.c.y - f.r * 0.4f)
+    drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.35f), Color.Transparent), center = hl, radius = f.r * 0.7f), f.r * 0.7f, hl)
     for (k in 0 until 3) {
         val rr = f.r * (0.55f + 0.14f * k)
         val rot = (f.ph * f.tau * (k + 1) * 0.5f) * 57.2958f + k * 90f
@@ -385,11 +386,13 @@ private fun DrawScope.styleAlicA(f: OrbFrame) {
     val top = Offset(f.c.x, f.c.y - w * 0.45f)
     val right = Offset(f.c.x + w * 0.42f, f.c.y + w * 0.42f)
     val leg = Path().apply { moveTo(left.x, left.y); lineTo(top.x, top.y); lineTo(right.x, right.y) }
-    drawPath(leg, Brush.linearGradient(listOf(a, b, c2), start = left, end = right), style = Stroke(w * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     val bar = Path().apply {
         moveTo(f.c.x - w * 0.22f, f.c.y + w * 0.16f)
         quadraticBezierTo(f.c.x, f.c.y + w * 0.02f, f.c.x + w * 0.26f, f.c.y + w * 0.18f)
     }
+    drawPath(leg, a.copy(alpha = 0.25f * g), style = Stroke(w * 0.30f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    drawPath(bar, b.copy(alpha = 0.25f * g), style = Stroke(w * 0.22f, cap = StrokeCap.Round))
+    drawPath(leg, Brush.linearGradient(listOf(a, b, c2), start = left, end = right), style = Stroke(w * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     drawPath(bar, b, style = Stroke(w * 0.09f, cap = StrokeCap.Round))
     if (f.particles) {
         val n = f.count(24)
@@ -397,7 +400,10 @@ private fun DrawScope.styleAlicA(f: OrbFrame) {
             val dir = if (i % 2 == 0) 1f else -1f
             val ang = i * (f.tau / n) + f.ph * f.tau * dir * 0.7f
             val rr = f.r * (1.05f + 0.25f * ((i % 5) / 5f))
-            drawCircle(f.col(i).copy(alpha = 0.9f), (1.2f + (i % 3)) * f.unit, Offset(f.c.x + cos(ang) * rr, f.c.y + sin(ang) * rr * 0.7f))
+            val p = Offset(f.c.x + cos(ang) * rr, f.c.y + sin(ang) * rr * 0.7f)
+            val tail = Offset(f.c.x + cos(ang - 0.12f) * rr, f.c.y + sin(ang - 0.12f) * rr * 0.7f)
+            drawCircle(f.col(i).copy(alpha = 0.3f), (0.8f + (i % 3) * 0.4f) * f.unit, tail)
+            drawCircle(f.col(i).copy(alpha = 0.95f), (1.2f + (i % 3)) * f.unit, p)
         }
     }
 }

@@ -125,8 +125,30 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
         override fun onLost(network: Network) { online = false }
     }
 
+    val licence = com.alic.ai.licence.LicenceManager(ctx)
+    var licenceReady by mutableStateOf(false); private set
+    var licenceChecking by mutableStateOf(true); private set
+    var licenceSignedIn by mutableStateOf(false); private set
+    var licenceMsg by mutableStateOf(""); private set
+
+    /** Re-checks the saved licence. Called on start and after sign-in or activation. */
+    fun refreshLicence() {
+        viewModelScope.launch {
+            licenceChecking = true
+            licenceSignedIn = licence.signedIn()
+            val r = if (licenceSignedIn) licence.verifyStored() else com.alic.ai.licence.LicenceResult.Denied("Sign in first.")
+            when (r) {
+                is com.alic.ai.licence.LicenceResult.Ok -> { licenceReady = true; licenceMsg = "" }
+                is com.alic.ai.licence.LicenceResult.Offline -> { licenceReady = true; licenceMsg = r.msg }
+                is com.alic.ai.licence.LicenceResult.Denied -> { licenceReady = false; licenceMsg = r.msg }
+            }
+            licenceChecking = false
+        }
+    }
+
     init {
         voice.init()
+        refreshLicence()
         LiveSessionController.projectHook = { a -> startProject(a) }
         online = cm.activeNetwork != null
         try { cm.registerDefaultNetworkCallback(netCb, Handler(Looper.getMainLooper())) } catch (e: Exception) {}

@@ -54,6 +54,7 @@ fun rememberMicGate(vm: AlicViewModel): Gate {
 
 @Composable
 fun AlicRoot(vm: AlicViewModel) {
+    if (!vm.licenceReady) { LicenceScreen(vm); return }
     val ctx = LocalContext.current
     val nav = rememberNavController()
     val snack = remember { SnackbarHostState() }

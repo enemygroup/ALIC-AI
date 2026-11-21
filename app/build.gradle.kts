@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Firebase needs app/google-services.json (CI writes it from the GOOGLE_SERVICES_JSON secret).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 val ksPath: String? = System.getenv("ALIC_KEYSTORE_PATH")
 
 android {
@@ -79,6 +84,11 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-devanagari:16.0.0")
     implementation("com.google.mlkit:image-labeling:17.0.9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // Licence login and key check (Firebase Auth + Firestore)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 
     // Offline wake word (Vosk)
     implementation("com.alphacephei:vosk-android:0.3.47@aar")
