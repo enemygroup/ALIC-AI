@@ -31,7 +31,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alic.ai.licence.LicenceResult
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -139,6 +143,20 @@ fun LicenceScreen(vm: AlicViewModel) {
     var err by remember { mutableStateOf("") }
     var info by remember { mutableStateOf("") }
     val step = when { vm.licenceChecking -> 0; !vm.licenceSignedIn -> 0; else -> 1 }
+    val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        busy = true; err = ""; info = ""
+        scope.launch {
+            try {
+                val account = GoogleSignIn.getSignedInAccountFromIntent(res.data).await()
+                val e = vm.licence.signInWithGoogleAccount(account)
+                busy = false
+                if (e != null) err = e else vm.refreshLicence()
+            } catch (ex: Exception) {
+                busy = false
+                err = ex.message ?: "Google sign-in was cancelled."
+            }
+        }
+    }
 
     GreenScreen {
         SupportRow()
@@ -192,6 +210,12 @@ fun LicenceScreen(vm: AlicViewModel) {
                         busy = false
                         if (e != null) err = e else vm.refreshLicence()
                     }
+                }
+                Spacer(Modifier.height(10.dp))
+                GreenButton("Continue with Google", !busy) {
+                    val client = vm.licence.googleClient()
+                    if (client == null) err = "Google sign-in is not set up in this build yet."
+                    else googleLauncher.launch(client.signInIntent)
                 }
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {

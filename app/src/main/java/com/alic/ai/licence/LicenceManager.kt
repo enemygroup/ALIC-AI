@@ -4,7 +4,12 @@ import android.content.Context
 import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -42,6 +47,33 @@ class LicenceManager(private val ctx: Context) {
             null
         } catch (e: Exception) {
             e.message ?: "Sign-in failed."
+        }
+    }
+
+    /** Web client ID from google-services.json (created when Google sign-in is enabled in Firebase). */
+    fun googleWebClientId(): String? {
+        val id = ctx.resources.getIdentifier("default_web_client_id", "string", ctx.packageName)
+        return if (id != 0) ctx.getString(id) else null
+    }
+
+    fun googleClient(): GoogleSignInClient? {
+        val web = googleWebClientId() ?: return null
+        val opts = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(web)
+            .requestEmail()
+            .build()
+        return GoogleSignIn.getClient(ctx, opts)
+    }
+
+    /** Signs in to Firebase with the Google account the user picked. */
+    suspend fun signInWithGoogleAccount(account: GoogleSignInAccount): String? {
+        if (!configured()) return "Firebase is not configured in this build."
+        return try {
+            val token = account.idToken ?: return "Google did not return a token. Check the SHA-1 and Google sign-in setup."
+            FirebaseAuth.getInstance().signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+            null
+        } catch (e: Exception) {
+            e.message ?: "Google sign-in failed."
         }
     }
 
