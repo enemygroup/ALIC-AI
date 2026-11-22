@@ -229,7 +229,7 @@ fun CodingOverlay(vm: AlicViewModel) {
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("ALIC AI DEVELOPER ENGINE", color = NEON, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
+                Text(uiBold("ALIC AI DEVELOPER ENGINE"), color = NEON, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
                 Text(statusLine, color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
                 Spacer(Modifier.height(12.dp))
 
@@ -262,7 +262,7 @@ fun CodingOverlay(vm: AlicViewModel) {
                         if (vm.codeStream.isBlank() && busy) "> waiting for Gemini..." else "> " + tail,
                         color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 15.sp
                     )
-                    if (busy) Text("█", color = NEON.copy(alpha = 0.3f + 0.7f * cursor), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+                    if (busy) Text(uiBold("█"), color = NEON.copy(alpha = 0.3f + 0.7f * cursor), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
                 }
 
                 // Code preview: first complete block, real code, real file name
@@ -327,11 +327,11 @@ fun CodingOverlay(vm: AlicViewModel) {
 
                 if (done && webDir != null) {
                     Spacer(Modifier.height(12.dp))
-                    GradientButton("Open website preview", { previewPage = "index.html"; showPreview = true }, Modifier.fillMaxWidth())
+                    GradientButton(uiBold("Open website preview"), { previewPage = "index.html"; showPreview = true }, Modifier.fillMaxWidth())
                 }
                 if (!busy) {
                     Spacer(Modifier.height(12.dp))
-                    GradientButton("Close", { vm.dismissCoding() }, Modifier.fillMaxWidth())
+                    GradientButton(uiBold("Close"), { vm.dismissCoding() }, Modifier.fillMaxWidth())
                 }
             }
         }

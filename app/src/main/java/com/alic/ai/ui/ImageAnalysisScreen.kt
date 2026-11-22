@@ -63,9 +63,9 @@ fun ImageAnalysisScreen(vm: AlicViewModel, nav: NavController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Image Analysis", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Image Analysis"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-            GhostButton("Choose image or screenshot", { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.fillMaxWidth(), Icons.Filled.Image)
+            GhostButton(uiBold("Choose image or screenshot"), { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.fillMaxWidth(), Icons.Filled.Image)
             Spacer(Modifier.height(10.dp))
             preview?.let { p ->
                 Image(p.asImageBitmap(), "Selected image", Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Fit)
@@ -88,14 +88,14 @@ fun ImageAnalysisScreen(vm: AlicViewModel, nav: NavController) {
             result?.let { r ->
                 Spacer(Modifier.height(12.dp))
                 NeoCard(Modifier.fillMaxWidth()) {
-                    Text("Objects and scene", color = C.Text, fontWeight = FontWeight.Bold)
-                    if (r.labels.isEmpty()) Text("Nothing clear was recognised.", color = C.Sub, fontSize = 13.sp)
+                    Text(uiBold("Objects and scene"), color = C.Text, fontWeight = FontWeight.Bold)
+                    if (r.labels.isEmpty()) Text(uiBold("Nothing clear was recognised."), color = C.Sub, fontSize = 13.sp)
                     else r.labels.forEach { Text("${it.name}  ${it.confidence}%", color = C.Sub, fontSize = 13.sp) }
                 }
                 Spacer(Modifier.height(10.dp))
                 NeoCard(Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Text("Text in image (Hindi + English)", color = C.Text, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text(uiBold("Text in image (Hindi + English)"), color = C.Text, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         if (r.text.isNotBlank()) IconButton(onClick = { clip.setText(AnnotatedString(r.text)); vm.toast = "Text copied" }) {
                             Icon(Icons.Filled.ContentCopy, "Copy text", tint = C.Neon)
                         }
@@ -103,7 +103,7 @@ fun ImageAnalysisScreen(vm: AlicViewModel, nav: NavController) {
                     Text(if (r.text.isBlank()) "No text found." else r.text, color = C.Sub, fontSize = 13.sp)
                 }
                 Spacer(Modifier.height(10.dp))
-                GradientButton("Explain with AI", {
+                GradientButton(uiBold("Explain with AI"), {
                     val summary = buildString {
                         append("Explain this image for me. ")
                         if (r.labels.isNotEmpty()) append("Objects/scene detected: ").append(r.labels.joinToString { it.name }).append(". ")

@@ -53,7 +53,7 @@ fun LiveScreen(vm: AlicViewModel, nav: NavController) {
     Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
-            Text("Voice Assistant", color = C.Text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+            Text(uiBold("Voice Assistant"), color = C.Text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
             Spacer(Modifier.weight(1f))
             IconButton({ vm.endLive(); nav.popBackStack() }) { Icon(Icons.Filled.Close, "Close", tint = C.Text) }
         }
@@ -110,7 +110,7 @@ fun QuickScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         Q("Settings", Icons.Filled.Settings) { nav.navigate("settings") }
     )
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Quick Actions", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Quick Actions"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Column(Modifier.fillMaxWidth()) {
                 items.chunked(3).forEach { row ->
@@ -132,8 +132,8 @@ fun QuickScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
                     IconBadge(Icons.Filled.Mic, 44.dp)
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Talk to ALIC", color = C.Text, fontWeight = FontWeight.SemiBold)
-                        Text("Start a live voice conversation", color = C.Sub, fontSize = 12.sp)
+                        Text(uiBold("Talk to ALIC"), color = C.Text, fontWeight = FontWeight.SemiBold)
+                        Text(uiBold("Start a live voice conversation"), color = C.Sub, fontSize = 12.sp)
                     }
                 }
             }
@@ -161,7 +161,7 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         T("Permissions", "Mic, camera, calls, overlay", Icons.Filled.Security, "permissions")
     )
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Tools")
+        ScreenHeader(uiBold("Tools"))
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp)) {
             items(tools.chunked(2)) { pair ->
                 Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -185,11 +185,11 @@ fun ToolsScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
 fun WebSearchScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().padding(bottom = 8.dp)) {
-        ScreenHeader("Web Search", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Web Search"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-            OutlinedTextField(q, { q = it }, label = { Text("Search the web") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
+            OutlinedTextField(q, { q = it }, label = { Text(uiBold("Search the web")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
             Spacer(Modifier.height(10.dp))
-            GradientButton("Search", { vm.searchWeb(q) }, Modifier.fillMaxWidth(), Icons.Filled.Search, enabled = !vm.webBusy && q.isNotBlank())
+            GradientButton(uiBold("Search"), { vm.searchWeb(q) }, Modifier.fillMaxWidth(), Icons.Filled.Search, enabled = !vm.webBusy && q.isNotBlank())
             Spacer(Modifier.height(12.dp))
             if (vm.webBusy) CircularProgressIndicator(color = C.Red, modifier = Modifier.size(26.dp))
             if (vm.webAnswer.isNotBlank()) NeoCard(Modifier.fillMaxWidth()) { MessageContent(vm.webAnswer) }
@@ -202,11 +202,11 @@ fun WebSearchScreen(vm: AlicViewModel, nav: NavController) {
 fun ImageGenScreen(vm: AlicViewModel, nav: NavController) {
     var p by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Image Generator", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Image Generator"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-            OutlinedTextField(p, { p = it }, label = { Text("Describe the image") }, minLines = 3, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
+            OutlinedTextField(p, { p = it }, label = { Text(uiBold("Describe the image")) }, minLines = 3, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
             Spacer(Modifier.height(10.dp))
-            GradientButton("Generate", { vm.generateImage(p) }, Modifier.fillMaxWidth(), Icons.Filled.AutoAwesome, enabled = !vm.imageBusy && p.isNotBlank())
+            GradientButton(uiBold("Generate"), { vm.generateImage(p) }, Modifier.fillMaxWidth(), Icons.Filled.AutoAwesome, enabled = !vm.imageBusy && p.isNotBlank())
             Spacer(Modifier.height(12.dp))
             if (vm.imageBusy) CircularProgressIndicator(color = C.Red, modifier = Modifier.size(26.dp))
             vm.imageBitmap?.let { bmp ->
@@ -225,7 +225,7 @@ fun FileAssistScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? -> if (uri != null) vm.loadFile(uri) }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("File Assistant", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("File Assistant"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             NeoCard(Modifier.fillMaxWidth(), onClick = { pick.launch(arrayOf("*/*")) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -235,7 +235,7 @@ fun FileAssistScreen(vm: AlicViewModel, nav: NavController) {
                 }
             }
             Spacer(Modifier.height(10.dp))
-            OutlinedTextField(q, { q = it }, label = { Text("Question about the file") }, minLines = 2, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
+            OutlinedTextField(q, { q = it }, label = { Text(uiBold("Question about the file")) }, minLines = 2, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(16.dp))
             Spacer(Modifier.height(10.dp))
             GradientButton(if (vm.fileBusy) "Reading..." else "Ask", { vm.askFile(q) }, Modifier.fillMaxWidth(), Icons.Filled.Send, enabled = !vm.fileBusy && vm.fileName.isNotBlank())
             Spacer(Modifier.height(12.dp))
@@ -255,10 +255,14 @@ fun ProfileScreen(vm: AlicViewModel, nav: NavController) {
     var nameDraft by remember(s.userName) { mutableStateOf(s.userName) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? -> if (uri != null) vm.setAvatar(uri) }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Profile", onBack = { nav.popBackStack() }) {
+        ScreenHeader(uiBold("Profile"), onBack = { nav.popBackStack() }) {
             IconButton({ nav.navigate("settings") }) { Icon(Icons.Filled.Settings, "Settings", tint = C.Text) }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            PlanSummaryCard(vm, nav)
+            ListRow(Icons.Filled.Star, uiBold("Premium"), uiBold("Plans and features"), onClick = { nav.navigate("premium") })
+            ListRow(Icons.Filled.Notifications, uiBold("Notifications"), uiBold("Phone notifications"), onClick = { nav.navigate("notifications") })
+            ListRow(Icons.Filled.Info, uiBold("Help & Support"), uiBold("Telegram support and FAQ"), onClick = { nav.navigate("help") })
             Box(contentAlignment = Alignment.BottomEnd) {
                 Avatar(s.userName.ifBlank { "You" }, 104.dp, vm.avatar)
                 Box(
@@ -268,19 +272,19 @@ fun ProfileScreen(vm: AlicViewModel, nav: NavController) {
             }
             Spacer(Modifier.height(10.dp))
             Text(s.userName.ifBlank { "Your name" }, color = C.Text, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text("ALIC AI member", color = C.Sub, fontSize = 13.sp)
+            Text(uiBold("ALIC AI member"), color = C.Sub, fontSize = 13.sp)
             Spacer(Modifier.height(16.dp))
             ListRow(Icons.Filled.Badge, "Name", if (s.userName.isBlank()) "Not set" else s.userName, onClick = { editName = !editName })
             if (editName) {
                 NeoCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    OutlinedTextField(nameDraft, { nameDraft = it }, label = { Text("Your name") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(14.dp))
+                    OutlinedTextField(nameDraft, { nameDraft = it }, label = { Text(uiBold("Your name")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(14.dp))
                     Spacer(Modifier.height(8.dp))
-                    GradientButton("Save name", { vm.updateSettings { it.copy(userName = nameDraft.trim()) }; editName = false }, Modifier.fillMaxWidth())
+                    GradientButton(uiBold("Save name"), { vm.updateSettings { it.copy(userName = nameDraft.trim()) }; editName = false }, Modifier.fillMaxWidth())
                 }
             }
-            ListRow(Icons.Filled.Info, "App version", "1.0.0")
-            ListRow(Icons.Filled.Policy, "Privacy policy", "How your data is stored", onClick = { vm.toast = "Chats and notes are stored only on this device. Your Gemini key is encrypted on the device." })
-            ListRow(Icons.Filled.Share, "Share app", "Send ALIC AI to a friend", onClick = { shareText(ctx, "Try ALIC AI, your intelligent personal assistant: THE POWER OF INTELLIGENCE.") })
+            ListRow(Icons.Filled.Info, uiBold("App version"), uiBold("1.0.0"))
+            ListRow(Icons.Filled.Policy, uiBold("Privacy policy"), uiBold("How your data is stored"), onClick = { vm.toast = "Chats and notes are stored only on this device. Your Gemini key is encrypted on the device." })
+            ListRow(Icons.Filled.Share, uiBold("Share app"), uiBold("Send ALIC AI to a friend"), onClick = { shareText(ctx, "Try ALIC AI, your intelligent personal assistant: THE POWER OF INTELLIGENCE.") })
             ListRow(Icons.Filled.History, "Conversation history", "${vm.conversations.size} saved", onClick = { nav.navigate("history") })
             Spacer(Modifier.height(16.dp))
         }
@@ -296,18 +300,18 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
     var doc by remember { mutableStateOf<String?>(null) }
     val persona = Personas.byId(s.persona)
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Settings", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Settings"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
-            SectionTitle("AI SETTINGS")
+            SectionTitle(uiBold("AI SETTINGS"))
             ListRow(Icons.Filled.Key, "Gemini API key", if (vm.hasKey) "Configured (${vm.currentKeyHint()})" else "Not set", onClick = { nav.navigate("aiconfig") })
             ListRow(Icons.Filled.Tune, "AI behaviour", "Response style: ${listOf("Concise", "Balanced", "Detailed")[s.responseStyle.coerceIn(0, 2)]}", onClick = { nav.navigate("aiconfig") })
             ListRow(Icons.Filled.Psychology, "Memory", if (s.memoryEnabled) "On: ${s.memoryNotes.size} notes" else "Off") {
                 Switch(s.memoryEnabled, { v -> vm.updateSettings { it.copy(memoryEnabled = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
             ListRow(Icons.Filled.History, "Conversation history", "${vm.conversations.size} saved", onClick = { nav.navigate("history") })
-            SectionTitle("VOICE")
-            ListRow(Icons.Filled.RecordVoiceOver, "Assistant persona", "ULTRON · Deep, powerful male voice (fixed)")
-            ListRow(Icons.Filled.GraphicEq, "Voice", "Charon (deep male, fixed)")
+            SectionTitle(uiBold("VOICE"))
+            ListRow(Icons.Filled.RecordVoiceOver, uiBold("Assistant persona"), uiBold("ULTRON · Deep, powerful male voice (fixed)"))
+            ListRow(Icons.Filled.GraphicEq, uiBold("Voice"), uiBold("Charon (deep male, fixed)"))
             ListRow(Icons.Filled.Hearing, "Reply only after “Hey Alic” (Live)", if (s.liveWakeOnly) "On: say Hey Alic first, then ask. Other voices are ignored." else "Off: ALIC answers any voice in Live") {
                 Switch(s.liveWakeOnly, { v -> vm.updateSettings { it.copy(liveWakeOnly = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
@@ -316,22 +320,22 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             }
             ListRow(Icons.Filled.Mic, "Microphone permission", if (hasPerm(ctx, android.Manifest.permission.RECORD_AUDIO)) "Granted" else "Not granted", onClick = { nav.navigate("permissions") })
 
-            SectionTitle("WAKE")
+            SectionTitle(uiBold("WAKE"))
             ListRow(Icons.Filled.Hearing, "Hey Alic", if (s.wakeEnabled) "On: offline wake word" else "Off", onClick = { nav.navigate("wake") })
             ListRow(Icons.Filled.TouchApp, "Clap wake-up", if (s.clapEnabled) "On: ${if (s.clapMode == "double") "double" else "single"} clap" else "Off", onClick = { nav.navigate("wake") })
             ListRow(Icons.Filled.Sensors, "Background listening", if (s.wakeAlwaysOn) "On" else "Off, listens only while the app is open", onClick = { nav.navigate("wake") })
             ListRow(Icons.Filled.Tune, "Wake sensitivity", when (s.wakeSensitivity) { "kam" -> "Low"; "zyada" -> "High"; else -> "Medium" }, onClick = { nav.navigate("wake") })
 
-            SectionTitle("POPUP")
+            SectionTitle(uiBold("POPUP"))
             ListRow(Icons.Filled.AutoAwesome, "Popup animation", if (s.popupAnimation) "On" else "Off") {
                 Switch(s.popupAnimation, { v -> vm.updateSettings { it.copy(popupAnimation = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
             ListRow(Icons.Filled.Timer, "Silence timeout", "${s.silenceTimeoutSec} seconds", onClick = { nav.navigate("wake") })
             ListRow(Icons.Filled.Layers, "Overlay permission", if (android.provider.Settings.canDrawOverlays(ctx)) "Allowed" else "Not allowed", onClick = { nav.navigate("permissions") })
 
-            SectionTitle("APPEARANCE")
-            ListRow(Icons.Filled.Animation, "Orb Studio", "15 orb designs with size, glow, speed and particles", onClick = { nav.navigate("orbstudio") })
-            ListRow(Icons.Filled.Palette, "Theme Studio", "15 complete app themes. Tap one to apply.", onClick = { nav.navigate("themestudio") })
+            SectionTitle(uiBold("APPEARANCE"))
+            ListRow(Icons.Filled.Animation, uiBold("Orb Studio"), uiBold("15 orb designs with size, glow, speed and particles"), onClick = { nav.navigate("orbstudio") })
+            ListRow(Icons.Filled.Palette, uiBold("Theme Studio"), uiBold("15 complete app themes. Tap one to apply."), onClick = { nav.navigate("themestudio") })
             ListRow(Icons.Filled.Palette, "Theme", when (s.themeMode) { "light" -> "Light"; "sunset" -> "Sunset"; else -> "Dark" }) {}
             ChipsRow(listOf("dark" to "Dark", "light" to "Light", "sunset" to "Sunset"), s.themeMode) { v -> vm.updateSettings { it.copy(themeMode = v) } }
             Spacer(Modifier.height(8.dp))
@@ -343,23 +347,25 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
                 Switch(s.animations, { v -> vm.updateSettings { it.copy(animations = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
 
-            SectionTitle("SYSTEM")
+            SectionTitle(uiBold("SYSTEM"))
             ListRow(Icons.Filled.Notifications, "Notifications", if (s.notifications) "On" else "Off") {
                 Switch(s.notifications, { v -> vm.updateSettings { it.copy(notifications = v) } }, colors = SwitchDefaults.colors(checkedTrackColor = C.Red, checkedThumbColor = C.OnPrimary))
             }
-            ListRow(Icons.Filled.BatteryChargingFull, "Battery optimization", "Keep the listener running", onClick = { nav.navigate("wake") })
-            ListRow(Icons.Filled.SettingsVoice, "Default digital assistant", "Choose ALIC AI as the assistant", onClick = { nav.navigate("permissions") })
-            ListRow(Icons.Filled.Security, "Permissions", "All app permissions", onClick = { nav.navigate("permissions") })
-            ListRow(Icons.Filled.DeleteSweep, "Delete my data", "Chats and notes on this device", titleColor = C.Err, onClick = { wipe = true })
+            ListRow(Icons.Filled.BatteryChargingFull, uiBold("Battery optimization"), uiBold("Keep the listener running"), onClick = { nav.navigate("wake") })
+            ListRow(Icons.Filled.SettingsVoice, uiBold("Default digital assistant"), uiBold("Choose ALIC AI as the assistant"), onClick = { nav.navigate("permissions") })
+            ListRow(Icons.Filled.Security, uiBold("Permissions"), uiBold("All app permissions"), onClick = { nav.navigate("permissions") })
+            ListRow(Icons.Filled.DeleteSweep, uiBold("Delete my data"), uiBold("Chats and notes on this device"), titleColor = C.Err, onClick = { wipe = true })
 
-            SectionTitle("ALIC RULES")
-            ListRow(Icons.Filled.Gavel, "ALIC Rules", "Your own rules for how ALIC behaves", onClick = { nav.navigate("rules") })
+            SectionTitle(uiBold("ALIC RULES"))
+            ListRow(Icons.Filled.Gavel, uiBold("ALIC Rules"), uiBold("Your own rules for how ALIC behaves"), onClick = { nav.navigate("rules") })
 
-            SectionTitle("AUTOMATION")
-            ListRow(Icons.Filled.Chat, "WhatsApp Automation", "Off by default. Smart replies for one-to-one chats", onClick = { nav.navigate("wa") })
+            UpgradeRow()
 
-            SectionTitle("ABOUT")
-            ListRow(Icons.Filled.Info, "About ALIC AI", "Developer: Rohit · Version 1.0.0 · THE POWER OF INTELLIGENCE", onClick = { doc = "about" })
+            SectionTitle(uiBold("AUTOMATION"))
+            ListRow(Icons.Filled.Chat, uiBold("WhatsApp Automation"), uiBold("Off by default. Smart replies for one-to-one chats"), onClick = { nav.navigate("wa") })
+
+            SectionTitle(uiBold("ABOUT"))
+            ListRow(Icons.Filled.Info, uiBold("About ALIC AI"), uiBold("Developer: Rohit · Version 1.0.0 · THE POWER OF INTELLIGENCE"), onClick = { doc = "about" })
             ListRow(Icons.Filled.Policy, "Privacy policy", null, onClick = { doc = "privacy" })
             ListRow(Icons.Filled.Gavel, "Terms and conditions", null, onClick = { doc = "terms" })
         }
@@ -367,10 +373,10 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
 
     if (wipe) AlertDialog(
         onDismissRequest = { wipe = false }, containerColor = C.Card,
-        title = { Text("Delete all my data?", color = C.Text) },
-        text = { Text("Removes chat history and memory notes from this device. This cannot be undone.", color = C.Sub) },
-        confirmButton = { TextButton({ wipe = false; vm.deleteAllMyData() }) { Text("Delete", color = C.Err) } },
-        dismissButton = { TextButton({ wipe = false }) { Text("Cancel", color = C.Sub) } }
+        title = { Text(uiBold("Delete all my data?"), color = C.Text) },
+        text = { Text(uiBold("Removes chat history and memory notes from this device. This cannot be undone."), color = C.Sub) },
+        confirmButton = { TextButton({ wipe = false; vm.deleteAllMyData() }) { Text(uiBold("Delete"), color = C.Err) } },
+        dismissButton = { TextButton({ wipe = false }) { Text(uiBold("Cancel"), color = C.Sub) } }
     )
     doc?.let { d ->
         AlertDialog(
@@ -386,7 +392,7 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
                     color = C.Sub, fontSize = 13.sp, modifier = Modifier.heightIn(max = 340.dp).verticalScroll(rememberScrollState())
                 )
             },
-            confirmButton = { TextButton({ doc = null }) { Text("Close", color = C.Neon) } }
+            confirmButton = { TextButton({ doc = null }) { Text(uiBold("Close"), color = C.Neon) } }
         )
     }
 }
@@ -399,8 +405,8 @@ fun PopupPreview() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text("ALIC AI", color = C.Text, fontWeight = FontWeight.Bold)
-                Text("I'm listening...", color = C.Sub, fontSize = 12.sp)
+                Text(uiBold("ALIC AI"), color = C.Text, fontWeight = FontWeight.Bold)
+                Text(uiBold("I'm listening..."), color = C.Sub, fontSize = 12.sp)
             }
         }
     }

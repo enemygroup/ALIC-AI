@@ -338,7 +338,8 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
         val frame = OrbFrame(
             c = center, r = base * pulse, ph = ph, lv = lv, amp = amp, tau = tau, unit = unit,
             pal = C.orb.take(6), glow = if (ThemeState.orbGlowOn) ThemeState.orbGlow else 0f,
-            dens = ThemeState.orbDensity, particles = ThemeState.orbParticles, dark = ThemeState.isDark
+            dens = ThemeState.orbDensity * when (ThemeState.planTier) { com.alic.ai.licence.PlanTier.LIFETIME -> 1.4f; com.alic.ai.licence.PlanTier.PREMIUM -> 1.2f; else -> 1f },
+            particles = ThemeState.orbParticles, dark = ThemeState.isDark
         )
         when (normalizeOrb(ThemeState.orbStyle)) {
             "holo" -> styleHolo(frame)

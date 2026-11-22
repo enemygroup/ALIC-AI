@@ -82,12 +82,12 @@ fun SplashScreen(ready: Boolean, onDone: () -> Unit) {
         Particles()
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(18.dp))
-            Text("ALIC AI", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = C.Text, letterSpacing = 6.sp, modifier = Modifier.graphicsLayer { alpha = fade.value })
+            Text(uiBold("ALIC AI"), fontSize = 38.sp, fontWeight = FontWeight.Bold, color = C.Text, letterSpacing = 6.sp, modifier = Modifier.graphicsLayer { alpha = fade.value })
             Spacer(Modifier.height(6.dp))
-            Text("Your Intelligent Personal Assistant", fontSize = 13.sp, color = C.Sub, modifier = Modifier.graphicsLayer { alpha = fade.value })
+            Text(uiBold("Your Intelligent Personal Assistant"), fontSize = 13.sp, color = C.Sub, modifier = Modifier.graphicsLayer { alpha = fade.value })
             Spacer(Modifier.height(36.dp))
             LinearProgressIndicator(modifier = Modifier.width(150.dp).clip(RoundedCornerShape(50)), color = C.Red, trackColor = C.Border)
-            Text("Loading...", fontSize = 12.sp, color = C.Muted, modifier = Modifier.padding(top = 8.dp))
+            Text(uiBold("Loading..."), fontSize = 12.sp, color = C.Muted, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }
@@ -121,7 +121,7 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.width(10.dp))
             Column {
-                Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
+                Text(uiBold("ALIC AI"), fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusDot(vm.online); Spacer(Modifier.width(5.dp))
                     Text(if (vm.online) "Online" else "Offline", color = C.Sub, fontSize = 11.sp)
@@ -156,19 +156,20 @@ fun HomeScreen(vm: AlicViewModel, nav: NavController, goLive: () -> Unit) {
             LevelWave(vm.level, active = vm.liveActive && !vm.liveMuted)
             Spacer(Modifier.height(6.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatusPill(when (ThemeState.planTier) { com.alic.ai.licence.PlanTier.LIFETIME -> "👑 Lifetime Premium"; com.alic.ai.licence.PlanTier.PREMIUM -> "⭐ Premium"; else -> "Standard" }, true)
                 StatusPill(if (vm.hasKey) "Gemini ready" else "Add API key", vm.hasKey) { nav.navigate("aiconfig") }
                 StatusPill(if (s.wakeEnabled || s.clapEnabled) "Wake-up on" else "Wake-up off", s.wakeEnabled || s.clapEnabled) { nav.navigate("wake") }
                 StatusPill(if (accessibilityOn) "Accessibility on" else "Accessibility off", accessibilityOn) { nav.navigate("permissions") }
             }
             if (vm.orb == OrbState.SPEAKING && !vm.liveActive || vm.orb == OrbState.THINKING && !vm.liveActive) {
-                TextButton({ vm.stopAll() }) { Icon(Icons.Filled.Stop, null, tint = C.Neon); Spacer(Modifier.width(6.dp)); Text("Stop", color = C.Neon) }
+                TextButton({ vm.stopAll() }) { Icon(Icons.Filled.Stop, null, tint = C.Neon); Spacer(Modifier.width(6.dp)); Text(uiBold("Stop"), color = C.Neon) }
             }
             val last = vm.messages.lastOrNull { !it.isUser && it.text.isNotBlank() }
             if (last != null) {
                 Spacer(Modifier.height(12.dp))
                 NeoCard(Modifier.fillMaxWidth(), onClick = { nav.navigate("chat") }) {
                     Text(last.text, color = C.Text, fontSize = 14.sp, maxLines = 5, overflow = TextOverflow.Ellipsis)
-                    Text("Open in chat", color = C.Neon, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(uiBold("Open in chat"), color = C.Neon, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -213,7 +214,7 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("ALIC AI", fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
+                Text(uiBold("ALIC AI"), fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, color = C.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusDot(vm.online); Spacer(Modifier.width(5.dp))
                     Text(if (vm.online) "Online" else "Offline", color = C.Sub, fontSize = 11.sp)
@@ -222,16 +223,16 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
             Box {
                 IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "Menu", tint = C.Text) }
                 DropdownMenu(menu, { menu = false }, modifier = Modifier.background(C.Bg2)) {
-                    DropdownMenuItem(text = { Text("New chat", color = C.Text) }, onClick = { menu = false; vm.newConversation() })
-                    DropdownMenuItem(text = { Text("Export chat", color = C.Text) }, onClick = { menu = false; vm.exportCurrent()?.let { shareText(ctx, it) } ?: run { vm.toast = "Nothing to export yet." } })
-                    DropdownMenuItem(text = { Text("Clear chat", color = C.Err) }, onClick = { menu = false; confirmClear = true })
+                    DropdownMenuItem(text = { Text(uiBold("New chat"), color = C.Text) }, onClick = { menu = false; vm.newConversation() })
+                    DropdownMenuItem(text = { Text(uiBold("Export chat"), color = C.Text) }, onClick = { menu = false; vm.exportCurrent()?.let { shareText(ctx, it) } ?: run { vm.toast = "Nothing to export yet." } })
+                    DropdownMenuItem(text = { Text(uiBold("Clear chat"), color = C.Err) }, onClick = { menu = false; confirmClear = true })
                 }
             }
         }
         if (msgs.isEmpty()) {
             Column(Modifier.weight(1f).fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.fillMaxWidth(0.5f)) { AlicOrb(OrbState.IDLE, 0f, animated = vm.settings.animations) }
-                Text("Hello! I am ALIC AI. Your intelligent personal assistant. Tell me what you need, and I will help you.", color = C.Text, textAlign = TextAlign.Center, fontSize = 15.sp)
+                Text(uiBold("Hello! I am ALIC AI. Your intelligent personal assistant. Tell me what you need, and I will help you."), color = C.Text, textAlign = TextAlign.Center, fontSize = 15.sp)
                 Spacer(Modifier.height(14.dp))
                 listOf("What is Android?", "WhatsApp kholo", "Mummy ko call karo", "Subah 7 baje ka alarm lagao").forEach {
                     Chip(it, false) { vm.send(it) }; Spacer(Modifier.height(8.dp))
@@ -260,7 +261,7 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
-                input, { input = it }, placeholder = { Text("Type a message...", color = C.Muted) }, modifier = Modifier.weight(1f),
+                input, { input = it }, placeholder = { Text(uiBold("Type a message..."), color = C.Muted) }, modifier = Modifier.weight(1f),
                 maxLines = 4, colors = fieldColors(), shape = RoundedCornerShape(26.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { submit() })
             )
@@ -279,10 +280,10 @@ fun ChatScreen(vm: AlicViewModel, goLive: () -> Unit) {
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false }, containerColor = C.Card,
-            title = { Text("Clear this chat?", color = C.Text) },
-            text = { Text("This conversation will be deleted from this device.", color = C.Sub) },
-            confirmButton = { TextButton({ confirmClear = false; vm.clearChat() }) { Text("Clear", color = C.Err) } },
-            dismissButton = { TextButton({ confirmClear = false }) { Text("Cancel", color = C.Sub) } }
+            title = { Text(uiBold("Clear this chat?"), color = C.Text) },
+            text = { Text(uiBold("This conversation will be deleted from this device."), color = C.Sub) },
+            confirmButton = { TextButton({ confirmClear = false; vm.clearChat() }) { Text(uiBold("Clear"), color = C.Err) } },
+            dismissButton = { TextButton({ confirmClear = false }) { Text(uiBold("Cancel"), color = C.Sub) } }
         )
     }
 }
@@ -305,7 +306,7 @@ fun Bubble(m: ChatMessage, isLast: Boolean, busy: Boolean, onCopy: () -> Unit, o
     } else {
         val failed = m.text.startsWith("⚠️")
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(C.Red), contentAlignment = Alignment.Center) { Text("A", color = C.OnPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+            Box(Modifier.size(34.dp).clip(CircleShape).background(C.Red), contentAlignment = Alignment.Center) { Text(uiBold("A"), color = C.OnPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f, fill = false)) {
                 val shape = RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp)
@@ -315,7 +316,7 @@ fun Bubble(m: ChatMessage, isLast: Boolean, busy: Boolean, onCopy: () -> Unit, o
                 ) {
                     if (m.text.isBlank() && busy) TypingDots() else MessageContent(m.text)
                     if (failed && isLast && !busy) TextButton(onRegen, contentPadding = PaddingValues(0.dp)) {
-                        Icon(Icons.Filled.Refresh, null, tint = C.Neon, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text("Retry", color = C.Neon)
+                        Icon(Icons.Filled.Refresh, null, tint = C.Neon, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text(uiBold("Retry"), color = C.Neon)
                     }
                 }
                 if (m.text.isNotBlank()) {

@@ -60,6 +60,8 @@ object ThemeState {
     /** Full colour set chosen in Theme Studio; null = built-in mode and accent. */
     var palette by mutableStateOf<Palette?>(null)
     var orbStyle by mutableStateOf("alic_a")
+    /** Plan tier of the active licence: changes badges, orb intensity and popup colours. */
+    var planTier by mutableStateOf(com.alic.ai.licence.PlanTier.BASIC)
     var orbSize by mutableStateOf(1f)
     var orbGlow by mutableStateOf(1f)
     var orbSpeed by mutableStateOf(1f)

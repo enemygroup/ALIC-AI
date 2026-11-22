@@ -45,12 +45,12 @@ fun HistoryScreen(vm: AlicViewModel, nav: NavController) {
     }
     val df = remember { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT) }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("History") {
+        ScreenHeader(uiBold("History")) {
             IconButton({ vm.exportAll()?.let { shareText(ctx, it) } ?: run { vm.toast = "No history to export." } }) { Icon(Icons.Filled.Share, "Export all", tint = C.Text) }
             IconButton({ confirmAll = true }) { Icon(Icons.Filled.Delete, "Clear all", tint = C.Text) }
         }
         OutlinedTextField(
-            q, { q = it }, placeholder = { Text("Search conversations", color = C.Sub) }, singleLine = true,
+            q, { q = it }, placeholder = { Text(uiBold("Search conversations"), color = C.Sub) }, singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Search, null, tint = C.Sub) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), colors = fieldColors(), shape = RoundedCornerShape(14.dp)
         )
@@ -75,10 +75,10 @@ fun HistoryScreen(vm: AlicViewModel, nav: NavController) {
     }
     if (confirmAll) AlertDialog(
         onDismissRequest = { confirmAll = false }, containerColor = C.Card,
-        title = { Text("Clear all history?", color = C.Text) },
-        text = { Text("All conversations will be deleted from this device.", color = C.Sub) },
-        confirmButton = { TextButton({ confirmAll = false; vm.clearAllHistory() }) { Text("Clear all", color = C.Neon) } },
-        dismissButton = { TextButton({ confirmAll = false }) { Text("Cancel", color = C.Sub) } }
+        title = { Text(uiBold("Clear all history?"), color = C.Text) },
+        text = { Text(uiBold("All conversations will be deleted from this device."), color = C.Sub) },
+        confirmButton = { TextButton({ confirmAll = false; vm.clearAllHistory() }) { Text(uiBold("Clear all"), color = C.Neon) } },
+        dismissButton = { TextButton({ confirmAll = false }) { Text(uiBold("Cancel"), color = C.Sub) } }
     )
 }
 
@@ -92,67 +92,67 @@ fun AIConfigScreen(vm: AlicViewModel, nav: NavController) {
     var liveModel by remember(s.liveModel) { mutableStateOf(s.liveModel) }
     var baseUrl by remember(s.baseUrl) { mutableStateOf(s.baseUrl) }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Gemini API configuration", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Gemini API configuration"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp).padding(bottom = 24.dp)) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text(if (vm.hasKey) "Saved key: ${vm.currentKeyHint()}" else "No API key saved yet", color = if (vm.hasKey) Color(0xFF2ECC71) else C.Neon, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
-                    key, { key = it }, label = { Text("Gemini API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    key, { key = it }, label = { Text(uiBold("Gemini API key")) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                     visualTransformation = if (show) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = { IconButton({ show = !show }) { Icon(if (show) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Toggle", tint = C.Sub) } },
                     colors = fieldColors(), shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    RedButton("Save key", { if (key.isBlank()) vm.toast = "Paste your key first." else { vm.saveApiKey(key); key = "" } }, Modifier.weight(1f))
-                    GhostButton("Remove", { vm.saveApiKey("") }, Modifier.weight(1f))
+                    RedButton(uiBold("Save key"), { if (key.isBlank()) vm.toast = "Paste your key first." else { vm.saveApiKey(key); key = "" } }, Modifier.weight(1f))
+                    GhostButton(uiBold("Remove"), { vm.saveApiKey("") }, Modifier.weight(1f))
                 }
-                if (!vm.secureStorageAvailable) Text("Encrypted storage is unavailable on this device; the key is kept in memory only for this session.", color = C.Neon, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-                Text("Get a free key at aistudio.google.com/apikey", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                if (!vm.secureStorageAvailable) Text(uiBold("Encrypted storage is unavailable on this device; the key is kept in memory only for this session."), color = C.Neon, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(uiBold("Get a free key at aistudio.google.com/apikey"), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
 
-            SectionTitle("MODELS")
+            SectionTitle(uiBold("MODELS"))
             GlassCard(Modifier.fillMaxWidth()) {
-                OutlinedTextField(model, { model = it }, label = { Text("Chat model") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(model, { model = it }, label = { Text(uiBold("Chat model")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(liveModel, { liveModel = it }, label = { Text("Live model (Gemini Live API)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(liveModel, { liveModel = it }, label = { Text(uiBold("Live model (Gemini Live API)")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    RedButton("Save models", { vm.updateSettings { it.copy(model = model.trim().ifBlank { it.model }, liveModel = liveModel.trim().ifBlank { it.liveModel }) }; vm.toast = "Models saved." }, Modifier.weight(1f))
-                    GhostButton("List models", { vm.fetchModels() }, Modifier.weight(1f))
+                    RedButton(uiBold("Save models"), { vm.updateSettings { it.copy(model = model.trim().ifBlank { it.model }, liveModel = liveModel.trim().ifBlank { it.liveModel }) }; vm.toast = "Models saved." }, Modifier.weight(1f))
+                    GhostButton(uiBold("List models"), { vm.fetchModels() }, Modifier.weight(1f))
                 }
                 if (vm.textModels.isNotEmpty()) {
-                    Text("Tap to use as chat model:", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+                    Text(uiBold("Tap to use as chat model:"), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
                     ChipsRow(vm.textModels.take(30).map { it to it }, s.model) { m -> model = m; vm.updateSettings { it.copy(model = m) } }
                 }
                 if (vm.liveModels.isNotEmpty()) {
-                    Text("Tap to use as live model:", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(uiBold("Tap to use as live model:"), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                     ChipsRow(vm.liveModels.map { it to it }, s.liveModel) { m -> liveModel = m; vm.updateSettings { it.copy(liveModel = m) } }
                 }
             }
 
-            SectionTitle("CONNECTION TEST")
+            SectionTitle(uiBold("CONNECTION TEST"))
             GlassCard(Modifier.fillMaxWidth()) {
                 RedButton(if (vm.testBusy) "Testing…" else "Test connection", { vm.testApi() }, Modifier.fillMaxWidth(), enabled = !vm.testBusy)
                 vm.testResult?.let { Text(it, color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
 
-            SectionTitle("YOUTUBE PLAY")
+            SectionTitle(uiBold("YOUTUBE PLAY"))
             YouTubeKeyCard(vm)
 
-            SectionTitle("BACKEND PROXY (OPTIONAL)")
+            SectionTitle(uiBold("BACKEND PROXY (OPTIONAL)"))
             GlassCard(Modifier.fillMaxWidth()) {
-                OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("API base URL") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text(uiBold("API base URL")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(8.dp))
-                GhostButton("Save base URL", {
+                GhostButton(uiBold("Save base URL"), {
                     val u = baseUrl.trim().trimEnd('/')
                     if (u.startsWith("https://")) { vm.updateSettings { it.copy(baseUrl = u) }; vm.toast = "Base URL saved." } else vm.toast = "Use an https:// URL."
                 }, Modifier.fillMaxWidth())
                 Text("Default: https://generativelanguage.googleapis.com. For production, point this at your own server that forwards to Gemini and keeps the real key server-side.", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
 
-            SectionTitle("SECURITY NOTE")
+            SectionTitle(uiBold("SECURITY NOTE"))
             Text(
                 "A key entered in an app is stored encrypted on your phone, but anyone with access to the device or its network traffic could still extract it. Use your own key, restrict it in Google AI Studio / Cloud Console, and never share this APK with a key embedded. For a public release, route requests through a backend proxy so no secret ships inside the APK.",
                 color = C.Sub, fontSize = 12.sp, lineHeight = 18.sp
@@ -168,7 +168,7 @@ private fun CodingEngineCard(vm: AlicViewModel) {
     var key by remember { mutableStateOf("") }
     var model by remember(s.openaiModel) { mutableStateOf(s.openaiModel) }
     GlassCard(Modifier.fillMaxWidth()) {
-        Text("Used by Coding Studio, the project builder and voice project requests.", color = C.Sub, fontSize = 12.sp)
+        Text(uiBold("Used by Coding Studio, the project builder and voice project requests."), color = C.Sub, fontSize = 12.sp)
         Spacer(Modifier.height(8.dp))
         ChipsRow(listOf("gemini" to "Gemini (free)", "openai" to "ChatGPT (OpenAI)"), s.codingProvider) { v ->
             vm.updateSettings { it.copy(codingProvider = v) }
@@ -178,26 +178,26 @@ private fun CodingEngineCard(vm: AlicViewModel) {
             color = if (vm.hasOpenAIKey) Color(0xFF2ECC71) else C.Err, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
         )
         OutlinedTextField(
-            key, { key = it }, label = { Text("OpenAI API key (sk-...)") }, singleLine = true,
+            key, { key = it }, label = { Text(uiBold("OpenAI API key (sk-...)")) }, singleLine = true,
             modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(),
             colors = fieldColors(), shape = RoundedCornerShape(12.dp)
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RedButton("Save key", { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveOpenAIKey(key); key = "" } }, Modifier.weight(1f))
-            GhostButton("Remove", { vm.saveOpenAIKey("") }, Modifier.weight(1f))
+            RedButton(uiBold("Save key"), { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveOpenAIKey(key); key = "" } }, Modifier.weight(1f))
+            GhostButton(uiBold("Remove"), { vm.saveOpenAIKey("") }, Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
-            model, { model = it }, label = { Text("OpenAI model") }, singleLine = true,
+            model, { model = it }, label = { Text(uiBold("OpenAI model")) }, singleLine = true,
             modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp)
         )
         Spacer(Modifier.height(8.dp))
-        GhostButton("Save model", {
+        GhostButton(uiBold("Save model"), {
             vm.updateSettings { it.copy(openaiModel = model.trim().ifBlank { "gpt-4o" }) }
             vm.toast = "Model saved."
         }, Modifier.fillMaxWidth())
-        Text("Keys are stored encrypted on this phone. Create a key at platform.openai.com. Usage is billed by OpenAI.", color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        Text(uiBold("Keys are stored encrypted on this phone. Create a key at platform.openai.com. Usage is billed by OpenAI."), color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
@@ -207,17 +207,17 @@ private fun YouTubeKeyCard(vm: AlicViewModel) {
     var key by remember { mutableStateOf("") }
     val saved = remember(vm.settings) { com.alic.ai.data.SecureStore(ctx).youtubeKey.isNotBlank() }
     GlassCard(Modifier.fillMaxWidth()) {
-        Text("To play songs and videos directly, add a free YouTube Data API key (console.cloud.google.com → enable YouTube Data API v3 → Credentials → API key). Without it, ALIC only opens the search.", color = C.Sub, fontSize = 12.sp)
+        Text(uiBold("To play songs and videos directly, add a free YouTube Data API key (console.cloud.google.com → enable YouTube Data API v3 → Credentials → API key). Without it, ALIC only opens the search."), color = C.Sub, fontSize = 12.sp)
         Text(if (saved) "YouTube key: saved" else "YouTube key: not set", color = if (saved) Color(0xFF2ECC71) else C.Err, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
         OutlinedTextField(
-            key, { key = it }, label = { Text("YouTube API key") }, singleLine = true,
+            key, { key = it }, label = { Text(uiBold("YouTube API key")) }, singleLine = true,
             modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(),
             colors = fieldColors(), shape = RoundedCornerShape(12.dp)
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RedButton("Save key", { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveYouTubeKey(key); key = "" } }, Modifier.weight(1f))
-            GhostButton("Remove", { vm.saveYouTubeKey("") }, Modifier.weight(1f))
+            RedButton(uiBold("Save key"), { if (key.isBlank()) vm.toast = "Paste the key first." else { vm.saveYouTubeKey(key); key = "" } }, Modifier.weight(1f))
+            GhostButton(uiBold("Remove"), { vm.saveYouTubeKey("") }, Modifier.weight(1f))
         }
     }
 }

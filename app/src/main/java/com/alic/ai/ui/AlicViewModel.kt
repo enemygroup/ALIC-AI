@@ -130,6 +130,9 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
     var licenceChecking by mutableStateOf(true); private set
     var licenceSignedIn by mutableStateOf(false); private set
     var licenceMsg by mutableStateOf(""); private set
+    /** True right after the licence is accepted: the intro video plays before the app. */
+    var showIntro by mutableStateOf(false); private set
+    fun finishIntro() { showIntro = false }
 
     /** Re-checks the saved licence. Called on start and after sign-in or activation. */
     fun refreshLicence() {
@@ -138,8 +141,8 @@ class AlicViewModel(app: Application) : AndroidViewModel(app) {
             licenceSignedIn = licence.signedIn()
             val r = if (licenceSignedIn) licence.verifyStored() else com.alic.ai.licence.LicenceResult.Denied("Sign in first.")
             when (r) {
-                is com.alic.ai.licence.LicenceResult.Ok -> { licenceReady = true; licenceMsg = "" }
-                is com.alic.ai.licence.LicenceResult.Offline -> { licenceReady = true; licenceMsg = r.msg }
+                is com.alic.ai.licence.LicenceResult.Ok -> { ThemeState.planTier = com.alic.ai.licence.PlanTier.of(licence.savedPlan()); if (!licenceReady) showIntro = true; licenceReady = true; licenceMsg = "" }
+                is com.alic.ai.licence.LicenceResult.Offline -> { ThemeState.planTier = com.alic.ai.licence.PlanTier.of(licence.savedPlan()); if (!licenceReady) showIntro = true; licenceReady = true; licenceMsg = r.msg }
                 is com.alic.ai.licence.LicenceResult.Denied -> { licenceReady = false; licenceMsg = r.msg }
             }
             licenceChecking = false

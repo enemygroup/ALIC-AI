@@ -26,8 +26,8 @@ import androidx.navigation.NavController
 fun ThemeStudioScreen(vm: AlicViewModel, nav: NavController) {
     val current = vm.settings.appTheme
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Theme Studio", onBack = { nav.popBackStack() }) {
-            TextButton(onClick = { vm.updateSettings { it.copy(appTheme = "") } }) { Text("Reset", color = C.Neon) }
+        ScreenHeader(uiBold("Theme Studio"), onBack = { nav.popBackStack() }) {
+            TextButton(onClick = { vm.updateSettings { it.copy(appTheme = "") } }) { Text(uiBold("Reset"), color = C.Neon) }
         }
         LazyColumn(Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(ThemePalettes.all) { p ->

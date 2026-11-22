@@ -48,39 +48,39 @@ fun WaScreen(nav: NavController) {
     val access = remember { WaNotificationService.isEnabled(ctx) }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("WhatsApp Automation", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("WhatsApp Automation"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
-            SectionTitle("STATUS")
+            SectionTitle(uiBold("STATUS"))
             NeoCard(Modifier.fillMaxWidth()) {
                 Text("Service: $status", color = C.Text, fontWeight = FontWeight.SemiBold)
                 Text(if (access) "Notification access: on" else "Notification access: off (turn it on below)", color = if (access) C.Sub else C.Err, fontSize = 12.sp)
-                GhostButton("Open notification access", {
+                GhostButton(uiBold("Open notification access"), {
                     ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }, Modifier.fillMaxWidth().padding(top = 8.dp))
             }
 
-            SectionTitle("CONTROLS (all OFF by default)")
+            SectionTitle(uiBold("CONTROLS (all OFF by default)"))
             GlassCard(Modifier.fillMaxWidth()) {
-                SwitchRow("WhatsApp automation", "Reads WhatsApp notifications", enabled) { v -> enabled = v; store.enabled = v; if (!v) WaLog.status.value = "Stopped" }
-                SwitchRow("Automatic reply", "Sends the reply through WhatsApp's notification Reply. Off = only shows the reply", autoReply) { v -> autoReply = v; store.autoReply = v }
-                SwitchRow("Voice announcement", "Announces replies sent (not during calls)", voice) { v -> voice = v; store.voice = v }
-                SwitchRow("Read incoming messages", "Speaks new messages aloud", readMsgs) { v -> readMsgs = v; store.readMessages = v }
-                Text("Reply delay (seconds)", color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+                SwitchRow(uiBold("WhatsApp automation"), uiBold("Reads WhatsApp notifications"), enabled) { v -> enabled = v; store.enabled = v; if (!v) WaLog.status.value = "Stopped" }
+                SwitchRow(uiBold("Automatic reply"), uiBold("Sends the reply through WhatsApp's notification Reply. Off = only shows the reply"), autoReply) { v -> autoReply = v; store.autoReply = v }
+                SwitchRow(uiBold("Voice announcement"), uiBold("Announces replies sent (not during calls)"), voice) { v -> voice = v; store.voice = v }
+                SwitchRow(uiBold("Read incoming messages"), uiBold("Speaks new messages aloud"), readMsgs) { v -> readMsgs = v; store.readMessages = v }
+                Text(uiBold("Reply delay (seconds)"), color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
                 ChipsRow(listOf("1" to "1", "3" to "3", "5" to "5", "10" to "10"), delay) { v -> delay = v; store.delaySec = v.toInt() }
-                Text("Max auto replies per contact (this app run)", color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(uiBold("Max auto replies per contact (this app run)"), color = C.Text, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
                 ChipsRow(listOf("5" to "5", "20" to "20", "50" to "50"), maxPer) { v -> maxPer = v; store.maxPerContact = v.toInt() }
-                Text("Reply language: automatic (same as the sender).", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(uiBold("Reply language: automatic (same as the sender)."), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
 
-            SectionTitle("CONTACT RULES (win over AI)")
+            SectionTitle(uiBold("CONTACT RULES (win over AI)"))
             GlassCard(Modifier.fillMaxWidth()) {
-                OutlinedTextField(contact, { contact = it }, label = { Text("Contact name (exact)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(contact, { contact = it }, label = { Text(uiBold("Contact name (exact)")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(6.dp))
-                OutlinedTextField(trigger, { trigger = it }, label = { Text("If message contains (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(trigger, { trigger = it }, label = { Text(uiBold("If message contains (optional)")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(6.dp))
-                OutlinedTextField(reply, { reply = it }, label = { Text("Reply with") }, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+                OutlinedTextField(reply, { reply = it }, label = { Text(uiBold("Reply with")) }, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(12.dp))
                 Spacer(Modifier.height(8.dp))
-                RedButton("Add rule", {
+                RedButton(uiBold("Add rule"), {
                     if (contact.isBlank() || reply.isBlank()) vm_toastHint(ctx)
                     else {
                         val list = rules + Rule(UUID.randomUUID().toString(), contact.trim(), trigger.trim(), reply.trim(), true)
@@ -108,9 +108,9 @@ fun WaScreen(nav: NavController) {
                 }
             }
 
-            SectionTitle("ACTIVITY LOG")
+            SectionTitle(uiBold("ACTIVITY LOG"))
             NeoCard(Modifier.fillMaxWidth()) {
-                if (lines.isEmpty()) Text("No activity yet.", color = C.Sub, fontSize = 12.sp)
+                if (lines.isEmpty()) Text(uiBold("No activity yet."), color = C.Sub, fontSize = 12.sp)
                 lines.take(25).forEach { Text(it, color = C.Sub, fontSize = 12.sp) }
             }
             Text(

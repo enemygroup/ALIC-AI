@@ -50,14 +50,14 @@ fun CompareScreen(nav: NavController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Image Compare", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("Image Compare"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GhostButton("Image 1", { pickA.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.Image)
-                GhostButton("Image 2", { pickB.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.Image)
+                GhostButton(uiBold("Image 1"), { pickA.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.Image)
+                GhostButton(uiBold("Image 2"), { pickB.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.Image)
             }
-            Text("1: " + (if (first == null) "not chosen" else "chosen"), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-            Text("2: " + (if (second == null) "not chosen" else "chosen"), color = C.Sub, fontSize = 12.sp)
+            Text(uiBold("1: ") + (if (first == null) "not chosen" else "chosen"), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            Text(uiBold("2: ") + (if (second == null) "not chosen" else "chosen"), color = C.Sub, fontSize = 12.sp)
             Spacer(Modifier.height(10.dp))
             GradientButton(if (busy) "Comparing..." else "Compare", {
                 val a = first
@@ -97,7 +97,7 @@ fun CompareScreen(nav: NavController) {
                         Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)),
                         contentScale = ContentScale.Fit
                     )
-                    Text("Red = different. Grey = same.", color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(uiBold("Red = different. Grey = same."), color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
                 }
             }
             Spacer(Modifier.height(16.dp))

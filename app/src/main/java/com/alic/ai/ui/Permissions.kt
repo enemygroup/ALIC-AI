@@ -53,20 +53,20 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
     val rows = remember(tick) {
         val notifOk = Build.VERSION.SDK_INT < 33 || hasPerm(ctx, Manifest.permission.POST_NOTIFICATIONS)
         listOf(
-            PermRow("Microphone", "Talk to ALIC in Live conversation", Icons.Filled.Mic, hasPerm(ctx, Manifest.permission.RECORD_AUDIO), "runtime", Manifest.permission.RECORD_AUDIO),
-            PermRow("Camera", "Take photos for AI Vision", Icons.Filled.CameraAlt, hasPerm(ctx, Manifest.permission.CAMERA), "runtime", Manifest.permission.CAMERA),
-            PermRow("Notifications", "Show the Stop button during live sessions", Icons.Filled.Notifications, notifOk, "runtime",
+            PermRow(uiBold("Microphone"), uiBold("Talk to ALIC in Live conversation"), Icons.Filled.Mic, hasPerm(ctx, Manifest.permission.RECORD_AUDIO), "runtime", Manifest.permission.RECORD_AUDIO),
+            PermRow(uiBold("Camera"), uiBold("Take photos for AI Vision"), Icons.Filled.CameraAlt, hasPerm(ctx, Manifest.permission.CAMERA), "runtime", Manifest.permission.CAMERA),
+            PermRow(uiBold("Notifications"), uiBold("Show the Stop button during live sessions"), Icons.Filled.Notifications, notifOk, "runtime",
                 if (Build.VERSION.SDK_INT >= 33) Manifest.permission.POST_NOTIFICATIONS else null),
-            PermRow("Photos", "Find and send photos from your gallery", Icons.Filled.Image, hasPerm(ctx, photoPerm()), "runtime", photoPerm()),
-            PermRow("Contacts", "Find a person by name when you say “call Mummy” or “message Papa”", Icons.Filled.Contacts, hasPerm(ctx, Manifest.permission.READ_CONTACTS), "runtime", Manifest.permission.READ_CONTACTS),
-            PermRow("Phone calls", "Place the call directly instead of only opening the dialer", Icons.Filled.Call, hasPerm(ctx, Manifest.permission.CALL_PHONE), "runtime", Manifest.permission.CALL_PHONE),
-            PermRow("Phone state", "Know when a call is ringing so ALIC can announce who is calling", Icons.Filled.Phone, hasPerm(ctx, Manifest.permission.READ_PHONE_STATE), "runtime", Manifest.permission.READ_PHONE_STATE),
-            PermRow("Call log", "Lets Android give ALIC the caller's number", Icons.Filled.History, hasPerm(ctx, Manifest.permission.READ_CALL_LOG), "runtime", Manifest.permission.READ_CALL_LOG),
-            PermRow("Answer and end calls", "Answer or hang up by voice: “Hey Alic, hang up”", Icons.Filled.CallEnd, hasPerm(ctx, Manifest.permission.ANSWER_PHONE_CALLS), "runtime", Manifest.permission.ANSWER_PHONE_CALLS),
-            PermRow("Media control and notifications", "Play, pause, skip and seek music; summarise notifications when you ask", Icons.Filled.MusicNote, Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")?.contains(ctx.packageName) == true, "listener"),
-            PermRow("Accessibility service", "Lets ALIC press Back, Home, Recents, scroll, and press Like or Subscribe on YouTube when you ask. The screen is read only for those commands.", Icons.Filled.Accessibility, AlicAccessibilityService.isEnabled(ctx), "accessibility"),
-            PermRow("Display over other apps", "Lets ALIC open apps and keep working while another app is on screen", Icons.Filled.Layers, Settings.canDrawOverlays(ctx), "overlay"),
-            PermRow("Default AI assistant", "Make ALIC the assistant that opens when you hold the Home button or power button.", Icons.Filled.AutoAwesome, isDefaultAssistant(ctx), "assistant")
+            PermRow(uiBold("Photos"), uiBold("Find and send photos from your gallery"), Icons.Filled.Image, hasPerm(ctx, photoPerm()), "runtime", photoPerm()),
+            PermRow(uiBold("Contacts"), uiBold("Find a person by name when you say “call Mummy” or “message Papa”"), Icons.Filled.Contacts, hasPerm(ctx, Manifest.permission.READ_CONTACTS), "runtime", Manifest.permission.READ_CONTACTS),
+            PermRow(uiBold("Phone calls"), uiBold("Place the call directly instead of only opening the dialer"), Icons.Filled.Call, hasPerm(ctx, Manifest.permission.CALL_PHONE), "runtime", Manifest.permission.CALL_PHONE),
+            PermRow(uiBold("Phone state"), uiBold("Know when a call is ringing so ALIC can announce who is calling"), Icons.Filled.Phone, hasPerm(ctx, Manifest.permission.READ_PHONE_STATE), "runtime", Manifest.permission.READ_PHONE_STATE),
+            PermRow(uiBold("Call log"), uiBold("Lets Android give ALIC the caller's number"), Icons.Filled.History, hasPerm(ctx, Manifest.permission.READ_CALL_LOG), "runtime", Manifest.permission.READ_CALL_LOG),
+            PermRow(uiBold("Answer and end calls"), uiBold("Answer or hang up by voice: “Hey Alic, hang up”"), Icons.Filled.CallEnd, hasPerm(ctx, Manifest.permission.ANSWER_PHONE_CALLS), "runtime", Manifest.permission.ANSWER_PHONE_CALLS),
+            PermRow(uiBold("Media control and notifications"), uiBold("Play, pause, skip and seek music; summarise notifications when you ask"), Icons.Filled.MusicNote, Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")?.contains(ctx.packageName) == true, "listener"),
+            PermRow(uiBold("Accessibility service"), uiBold("Lets ALIC press Back, Home, Recents, scroll, and press Like or Subscribe on YouTube when you ask. The screen is read only for those commands."), Icons.Filled.Accessibility, AlicAccessibilityService.isEnabled(ctx), "accessibility"),
+            PermRow(uiBold("Display over other apps"), uiBold("Lets ALIC open apps and keep working while another app is on screen"), Icons.Filled.Layers, Settings.canDrawOverlays(ctx), "overlay"),
+            PermRow(uiBold("Default AI assistant"), uiBold("Make ALIC the assistant that opens when you hold the Home button or power button."), Icons.Filled.AutoAwesome, isDefaultAssistant(ctx), "assistant")
         )
     }
     val missingRuntime = rows.filter { !it.granted && it.kind == "runtime" && it.perm != null }.map { it.perm!! }
@@ -135,9 +135,9 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Permissions", onBack = if (first) null else ({ nav.popBackStack() }))
+        ScreenHeader(uiBold("Permissions"), onBack = if (first) null else ({ nav.popBackStack() }))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp)) {
-            Text("ALIC AI only asks for what its features need. You can change any of these later in Android settings.", color = C.Sub, fontSize = 13.sp)
+            Text(uiBold("ALIC AI only asks for what its features need. You can change any of these later in Android settings."), color = C.Sub, fontSize = 13.sp)
             Spacer(Modifier.height(12.dp))
             rows.forEach { r ->
                 GlassCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
@@ -148,13 +148,13 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
                             Text(r.title, color = C.Text, fontWeight = FontWeight.SemiBold)
                             Text(r.why, color = C.Sub, fontSize = 12.sp)
                         }
-                        if (r.granted) Text("ON", color = Color(0xFF2ECC71), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        if (r.granted) Text(uiBold("ON"), color = Color(0xFF2ECC71), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         else Button(
                             onClick = { act(r) },
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = C.OnPrimary),
                             contentPadding = PaddingValues(horizontal = 14.dp)
-                        ) { Text("Allow") }
+                        ) { Text(uiBold("Allow")) }
                     }
                 }
             }
@@ -163,14 +163,14 @@ fun PermissionsScreen(vm: AlicViewModel, nav: NavController) {
                 color = C.Sub, fontSize = 12.sp, lineHeight = 17.sp
             )
             Spacer(Modifier.height(10.dp))
-            GhostButton("Open Android app settings", {
+            GhostButton(uiBold("Open Android app settings"), {
                 ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", ctx.packageName, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }, Modifier.fillMaxWidth(), Icons.Filled.Settings)
             Spacer(Modifier.height(24.dp))
         }
         Column(Modifier.padding(14.dp)) {
             if (rows.any { !it.granted }) {
-                RedButton("Allow all", {
+                RedButton(uiBold("Allow all"), {
                     val next = rows.firstOrNull { !it.granted }
                     if (missingRuntime.isNotEmpty()) launcher.launch(missingRuntime.toTypedArray())
                     else if (next != null) act(next)

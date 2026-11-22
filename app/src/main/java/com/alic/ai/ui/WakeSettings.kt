@@ -79,47 +79,47 @@ fun WakeSettingsScreen(vm: AlicViewModel, standalone: Boolean = false, onBack: (
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Wake Up Detection", onBack = onBack)
+        ScreenHeader(uiBold("Wake Up Detection"), onBack = onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp).padding(bottom = 24.dp)) {
-            SectionTitle("WAKE WORD")
+            SectionTitle(uiBold("WAKE WORD"))
             GlassCard(Modifier.fillMaxWidth()) {
-                SwitchRow("Wake word “Hey Alic”", "Offline detection with Vosk. Turn on from this screen so Android allows the microphone service.", s.wakeEnabled) { on ->
+                SwitchRow(uiBold("Wake word “Hey Alic”"), uiBold("Offline detection with Vosk. Turn on from this screen so Android allows the microphone service."), s.wakeEnabled) { on ->
                     if (on) { if (micOk) enableWake() else micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
                     else { vm.updateSettings { it.copy(wakeEnabled = false) }; WakeWordService.stop(ctx) }
                 }
                 Text("Status: $status", color = C.Sub, fontSize = 12.sp)
                 if (phrases.isNotBlank()) Text("Listening phrases: $phrases", color = C.Sub, fontSize = 12.sp)
-                SwitchRow("Always-on background listening", "Off = listen only while the app is open", s.wakeAlwaysOn) { v -> vm.updateSettings { it.copy(wakeAlwaysOn = v) } }
+                SwitchRow(uiBold("Always-on background listening"), uiBold("Off = listen only while the app is open"), s.wakeAlwaysOn) { v -> vm.updateSettings { it.copy(wakeAlwaysOn = v) } }
                 SwitchRow("Activation sound", null, s.wakeSound) { v -> vm.updateSettings { it.copy(wakeSound = v) } }
-                Text("Wake sensitivity", color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(uiBold("Wake sensitivity"), color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
                 ChipsRow(listOf("kam" to "Kam (600)", "medium" to "Medium (300)", "zyada" to "Zyada (120)"), s.wakeSensitivity) { v -> vm.updateSettings { it.copy(wakeSensitivity = v) } }
             }
 
-            SectionTitle("POPUP")
+            SectionTitle(uiBold("POPUP"))
             GlassCard(Modifier.fillMaxWidth()) {
-                SwitchRow("Popup animation", "Entrance animation only; closing never waits for it", s.popupAnimation) { v -> vm.updateSettings { it.copy(popupAnimation = v) } }
-                Text("Close after silence", color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                SwitchRow(uiBold("Popup animation"), uiBold("Entrance animation only; closing never waits for it"), s.popupAnimation) { v -> vm.updateSettings { it.copy(popupAnimation = v) } }
+                Text(uiBold("Close after silence"), color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
                 ChipsRow(listOf("5" to "5 sec", "8" to "8 sec", "15" to "15 sec"), s.silenceTimeoutSec.toString()) { v -> vm.updateSettings { it.copy(silenceTimeoutSec = v.toInt()) } }
-                Text("Say “sleep”, “so jao”, “band ho jao”, “sleep mode”, “chale jao”, “band karo”, “bye” or “good night” to close it.", color = C.Sub, fontSize = 12.sp)
+                Text(uiBold("Say “sleep”, “so jao”, “band ho jao”, “sleep mode”, “chale jao”, “band karo”, “bye” or “good night” to close it."), color = C.Sub, fontSize = 12.sp)
             }
 
-            SectionTitle("VOICE")
+            SectionTitle(uiBold("VOICE"))
             GlassCard(Modifier.fillMaxWidth()) {
-                SwitchRow("Voice interruption", "On: you can interrupt ALIC while he speaks. Off: the mic is muted (silence is sent) while he speaks.", s.voiceInterruption) { v -> vm.updateSettings { it.copy(voiceInterruption = v) } }
+                SwitchRow(uiBold("Voice interruption"), uiBold("On: you can interrupt ALIC while he speaks. Off: the mic is muted (silence is sent) while he speaks."), s.voiceInterruption) { v -> vm.updateSettings { it.copy(voiceInterruption = v) } }
             }
 
-            SectionTitle("PHONE CALLS")
+            SectionTitle(uiBold("PHONE CALLS"))
             GlassCard(Modifier.fillMaxWidth()) {
-                SwitchRow("Announce incoming calls", "ALIC says who is calling. With “Hey Alic” on, say “Hey Alic, hang up” or “Hey Alic, uthao”.", s.announceCalls) { v -> vm.updateSettings { it.copy(announceCalls = v) } }
+                SwitchRow(uiBold("Announce incoming calls"), uiBold("ALIC says who is calling. With “Hey Alic” on, say “Hey Alic, hang up” or “Hey Alic, uthao”."), s.announceCalls) { v -> vm.updateSettings { it.copy(announceCalls = v) } }
                 Text(if (callOk) "Call permissions: all granted" else "Call permissions: some are missing (Phone state, Call log, Answer/end calls, Contacts)", color = C.Sub, fontSize = 12.sp)
-                if (!callOk) GhostButton("Allow call permissions", { callLauncher.launch(callPerms.toTypedArray()) }, Modifier.padding(top = 8.dp))
+                if (!callOk) GhostButton(uiBold("Allow call permissions"), { callLauncher.launch(callPerms.toTypedArray()) }, Modifier.padding(top = 8.dp))
                 Text(
                     "Voice hang-up works while the phone is ringing. Once a call is connected Android usually blocks other apps from the microphone, so it may not hear you; test on your phone.",
                     color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)
                 )
             }
 
-            SectionTitle("STATUS")
+            SectionTitle(uiBold("STATUS"))
             StatusCard("Microphone permission", if (micOk) "Granted" else "Denied: background wake listening cannot run", micOk, if (micOk) null else "Allow") {
                 micLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
@@ -137,7 +137,7 @@ fun WakeSettingsScreen(vm: AlicViewModel, standalone: Boolean = false, onBack: (
             }
             StatusCard("Vosk model", modelInfo, VoskModelManager.isUsable(VoskModelManager.modelDir(ctx)), null) {}
 
-            SectionTitle("LIMITATIONS")
+            SectionTitle(uiBold("LIMITATIONS"))
             Text(
                 "Android does not let a third-party app guarantee always-on microphone listening or a popup on the lock screen. " +
                     "Android 14+ only allows starting the microphone service from a visible app, so enable the wake word from this screen. " +

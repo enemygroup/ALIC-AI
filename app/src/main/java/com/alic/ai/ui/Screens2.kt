@@ -53,7 +53,7 @@ fun CodingScreen(vm: AlicViewModel, nav: NavController) {
     val langs = listOf("Kotlin", "Python", "PHP", "HTML/CSS/JS", "JavaScript", "Java", "Firebase Rules", "Android (Compose)")
     val modes = listOf("Generate", "Explain", "Debug", "Fix", "Chat")
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Coding Studio", onBack = { nav.popBackStack() }) {
+        ScreenHeader(uiBold("Coding Studio"), onBack = { nav.popBackStack() }) {
             IconButton({ vm.codingRegenerate() }) { Icon(Icons.Filled.Refresh, "Regenerate", tint = C.Text) }
             IconButton({ vm.codingClear() }) { Icon(Icons.Filled.Delete, "Clear", tint = C.Text) }
         }
@@ -62,7 +62,7 @@ fun CodingScreen(vm: AlicViewModel, nav: NavController) {
             ChipsRow(modes.map { it to it }, mode) { mode = it }
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(
-                code, { code = it }, label = { Text("Code (paste for explain / debug / fix)") },
+                code, { code = it }, label = { Text(uiBold("Code (paste for explain / debug / fix)")) },
                 modifier = Modifier.fillMaxWidth(), minLines = 5, maxLines = 12,
                 textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = Color(0xFFEDEDED)),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -81,17 +81,17 @@ fun CodingScreen(vm: AlicViewModel, nav: NavController) {
             RedButton(if (vm.codingBusy) "Working…" else "Run ALIC AI", {
                 vm.codingSend(mode, lang, instruction, code); instruction = ""
             }, Modifier.fillMaxWidth(), enabled = !vm.codingBusy, icon = Icons.Filled.Bolt)
-            Text("Generated code is never executed automatically.", color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            Text(uiBold("Generated code is never executed automatically."), color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             Spacer(Modifier.height(10.dp))
             vm.coding.forEach { m ->
                 if (m.isUser) {
-                    Text("You: " + m.text.lineSequence().firstOrNull().orEmpty() + "\n" + m.text.lines().drop(1).joinToString(" ").take(120),
+                    Text(uiBold("You: ") + m.text.lineSequence().firstOrNull().orEmpty() + "\n" + m.text.lines().drop(1).joinToString(" ").take(120),
                         color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(vertical = 4.dp))
                 } else {
                     GlassCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
                         if (m.text.isBlank()) TypingDots() else MessageContent(m.text)
                         if (m.text.isNotBlank()) TextButton({ clip.setText(AnnotatedString(m.text)); vm.toast = "Copied" }) {
-                            Icon(Icons.Filled.ContentCopy, null, tint = C.Neon, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text("Copy all", color = C.Neon)
+                            Icon(Icons.Filled.ContentCopy, null, tint = C.Neon, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text(uiBold("Copy all"), color = C.Neon)
                         }
                     }
                 }
@@ -116,7 +116,7 @@ fun VisionScreen(vm: AlicViewModel, nav: NavController) {
     }
     val quick = listOf("Describe this image", "Identify the objects", "Explain this document", "Explain this screenshot", "Extract all text")
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("AI Vision", onBack = { nav.popBackStack() }) {
+        ScreenHeader(uiBold("AI Vision"), onBack = { nav.popBackStack() }) {
             if (vm.visionBitmap != null) IconButton({ vm.clearVision() }) { Icon(Icons.Filled.Close, "Remove image", tint = C.Text) }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(12.dp)) {
@@ -127,20 +127,20 @@ fun VisionScreen(vm: AlicViewModel, nav: NavController) {
                 GlassCard(Modifier.fillMaxWidth().height(150.dp)) {
                     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.Image, null, tint = C.Neon, modifier = Modifier.size(36.dp))
-                        Text("Take a photo or choose an image", color = C.Sub, fontSize = 14.sp)
+                        Text(uiBold("Take a photo or choose an image"), color = C.Sub, fontSize = 14.sp)
                     }
                 }
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GhostButton("Camera", {
+                GhostButton(uiBold("Camera"), {
                     if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) cam.launch(captureUri)
                     else camPerm.launch(Manifest.permission.CAMERA)
                 }, Modifier.weight(1f), Icons.Filled.CameraAlt)
-                GhostButton("Gallery", { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.PhotoLibrary)
+                GhostButton(uiBold("Gallery"), { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.weight(1f), Icons.Filled.PhotoLibrary)
             }
             ChipsRow(quick.map { it to it }, "") { q = it; vm.askVision(it) }
-            OutlinedTextField(q, { q = it }, label = { Text("Ask about the image") }, modifier = Modifier.fillMaxWidth(), minLines = 2, colors = fieldColors(), shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(q, { q = it }, label = { Text(uiBold("Ask about the image")) }, modifier = Modifier.fillMaxWidth(), minLines = 2, colors = fieldColors(), shape = RoundedCornerShape(12.dp))
             Spacer(Modifier.height(8.dp))
             RedButton(if (vm.visionBusy) "Analysing…" else "Ask ALIC", { vm.askVision(q) }, Modifier.fillMaxWidth(), enabled = !vm.visionBusy && vm.visionBitmap != null)
             Spacer(Modifier.height(10.dp))
@@ -156,30 +156,30 @@ fun YouTubeScreen(vm: AlicViewModel, nav: NavController) {
     var q by remember { mutableStateOf("") }
     var link by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("YouTube Assistant", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("YouTube Assistant"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(12.dp)) {
-            OutlinedTextField(q, { q = it }, label = { Text("Search videos or music") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(14.dp))
+            OutlinedTextField(q, { q = it }, label = { Text(uiBold("Search videos or music")) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = RoundedCornerShape(14.dp))
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                RedButton("YouTube", { if (q.isBlank()) vm.toast = "Enter something to search." else vm.youtube(q.trim(), false) }, Modifier.weight(1f), icon = Icons.Filled.PlayArrow)
-                GhostButton("YouTube Music", { if (q.isBlank()) vm.toast = "Enter something to search." else vm.youtube(q.trim(), true) }, Modifier.weight(1f), Icons.Filled.MusicNote)
+                RedButton(uiBold("YouTube"), { if (q.isBlank()) vm.toast = "Enter something to search." else vm.youtube(q.trim(), false) }, Modifier.weight(1f), icon = Icons.Filled.PlayArrow)
+                GhostButton(uiBold("YouTube Music"), { if (q.isBlank()) vm.toast = "Enter something to search." else vm.youtube(q.trim(), true) }, Modifier.weight(1f), Icons.Filled.MusicNote)
             }
-            SectionTitle("OPEN A LINK")
+            SectionTitle(uiBold("OPEN A LINK"))
             OutlinedTextField(
-                link, { link = it }, label = { Text("Paste a YouTube link") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                link, { link = it }, label = { Text(uiBold("Paste a YouTube link")) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), colors = fieldColors(), shape = RoundedCornerShape(14.dp)
             )
             Spacer(Modifier.height(8.dp))
-            GhostButton("Open link", {
+            GhostButton(uiBold("Open link"), {
                 val l = link.trim()
                 if (Regex("^https?://(www\\.|m\\.|music\\.)?(youtu\\.be|youtube\\.com)/\\S*", RegexOption.IGNORE_CASE).containsMatchIn(l)) vm.runDirect(Command.OpenUrl(l))
                 else vm.toast = "Enter a valid youtube.com or youtu.be link."
             }, Modifier.fillMaxWidth(), Icons.Filled.Link)
-            SectionTitle("CHAT EXAMPLES")
+            SectionTitle(uiBold("CHAT EXAMPLES"))
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("“ALIC YouTube par Arijit Singh songs chalao”\n“ALIC YouTube Music par lofi play karo”\n“ALIC YouTube kholo”", color = C.Sub, fontSize = 13.sp, lineHeight = 20.sp)
             }
-            Text("ALIC opens YouTube through official Android intents. Playback and sign-in are handled by the YouTube app.", color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
+            Text(uiBold("ALIC opens YouTube through official Android intents. Playback and sign-in are handled by the YouTube app."), color = C.Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }
@@ -191,10 +191,10 @@ fun AppsScreen(vm: AlicViewModel, nav: NavController) {
     var filter by remember { mutableStateOf("") }
     val shown = apps.filter { it.label.contains(filter, ignoreCase = true) }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("App Control", onBack = { nav.popBackStack() })
-        Text("Type “camera open karo” or “WhatsApp kholo” in chat, or tap an app below.", color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
+        ScreenHeader(uiBold("App Control"), onBack = { nav.popBackStack() })
+        Text(uiBold("Type “camera open karo” or “WhatsApp kholo” in chat, or tap an app below."), color = C.Sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
         OutlinedTextField(
-            filter, { filter = it }, placeholder = { Text("Search installed apps", color = C.Sub) }, singleLine = true,
+            filter, { filter = it }, placeholder = { Text(uiBold("Search installed apps"), color = C.Sub) }, singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Search, null, tint = C.Sub) },
             modifier = Modifier.fillMaxWidth().padding(12.dp), colors = fieldColors(), shape = RoundedCornerShape(14.dp)
         )
@@ -210,7 +210,7 @@ fun AppsScreen(vm: AlicViewModel, nav: NavController) {
                 }
                 HorizontalDivider(color = C.Border)
             }
-            if (shown.isEmpty()) item { Text("No matching apps.", color = C.Sub, modifier = Modifier.padding(16.dp)) }
+            if (shown.isEmpty()) item { Text(uiBold("No matching apps."), color = C.Sub, modifier = Modifier.padding(16.dp)) }
         }
     }
 }

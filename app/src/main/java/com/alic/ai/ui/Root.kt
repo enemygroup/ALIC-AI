@@ -55,6 +55,7 @@ fun rememberMicGate(vm: AlicViewModel): Gate {
 @Composable
 fun AlicRoot(vm: AlicViewModel) {
     if (!vm.licenceReady) { LicenceScreen(vm); return }
+    if (vm.showIntro) { IntroVideo { vm.finishIntro() }; return }
     val ctx = LocalContext.current
     val nav = rememberNavController()
     val snack = remember { SnackbarHostState() }
@@ -112,6 +113,10 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("rules") { RulesScreen(nav) }
             composable("themestudio") { ThemeStudioScreen(vm, nav) }
             composable("orbstudio") { OrbStudioScreen(vm, nav) }
+            composable("premium") { PremiumScreen(vm, nav) }
+            composable("myplan") { MyPlanScreen(vm, nav) }
+            composable("notifications") { NotificationCenterScreen(nav) }
+            composable("help") { HelpSupportScreen(nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }
@@ -126,10 +131,10 @@ fun AlicRoot(vm: AlicViewModel) {
     vm.pendingCommand?.let { c ->
         AlertDialog(
             onDismissRequest = { vm.confirmCommand(false) }, containerColor = C.Card,
-            title = { Text("Confirm action", color = C.Text) },
+            title = { Text(uiBold("Confirm action"), color = C.Text) },
             text = { Text(CommandRouter.describe(c), color = C.Sub) },
-            confirmButton = { TextButton({ vm.confirmCommand(true) }) { Text("Allow", color = C.Neon) } },
-            dismissButton = { TextButton({ vm.confirmCommand(false) }) { Text("Cancel", color = C.Sub) } }
+            confirmButton = { TextButton({ vm.confirmCommand(true) }) { Text(uiBold("Allow"), color = C.Neon) } },
+            dismissButton = { TextButton({ vm.confirmCommand(false) }) { Text(uiBold("Cancel"), color = C.Sub) } }
         )
     }
 }

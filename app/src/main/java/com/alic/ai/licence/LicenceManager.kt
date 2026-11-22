@@ -38,16 +38,29 @@ class LicenceManager(private val ctx: Context) {
     fun signedIn(): Boolean = configured() && FirebaseAuth.getInstance().currentUser != null
     fun currentEmail(): String = if (configured()) FirebaseAuth.getInstance().currentUser?.email.orEmpty() else ""
 
-    suspend fun signIn(email: String, password: String, create: Boolean): String? {
+    suspend fun signIn(email: String, password: String, create: Boolean, name: String = ""): String? {
         if (!configured()) return "Firebase is not configured in this build."
         return try {
             val auth = FirebaseAuth.getInstance()
-            if (create) auth.createUserWithEmailAndPassword(email.trim(), password).await()
-            else auth.signInWithEmailAndPassword(email.trim(), password).await()
+            if (create) {
+                auth.createUserWithEmailAndPassword(email.trim(), password).await()
+                if (name.isNotBlank()) {
+                    val req = com.google.firebase.auth.UserProfileChangeRequest.Builder().setDisplayName(name.trim()).build()
+                    auth.currentUser?.updateProfile(req)?.await()
+                }
+            } else {
+                auth.signInWithEmailAndPassword(email.trim(), password).await()
+            }
             null
         } catch (e: Exception) {
             e.message ?: "Sign-in failed."
         }
+    }
+
+    fun displayName(): String {
+        if (!configured()) return ""
+        val u = FirebaseAuth.getInstance().currentUser
+        return u?.displayName?.takeIf { it.isNotBlank() } ?: u?.email.orEmpty()
     }
 
     /** Web client ID from google-services.json (created when Google sign-in is enabled in Firebase). */
@@ -125,6 +138,7 @@ class LicenceManager(private val ctx: Context) {
 
     fun savedKey(): String = prefs.getString("key", "") ?: ""
     fun savedExpiry(): Long = prefs.getLong("exp", 0L)
+    fun savedPlan(): String = prefs.getString("plan", "") ?: ""
 
     fun signOut() {
         if (configured()) FirebaseAuth.getInstance().signOut()
@@ -187,6 +201,7 @@ class LicenceManager(private val ctx: Context) {
             } else if (boundDevice != device) {
                 return LicenceResult.Denied("This key is already used on another phone. Request a device reset from the licence screen.")
             }
+            prefs.edit().putString("plan", snap.getString("plan") ?: "").apply()
             save(key, uid, exp)
             LicenceResult.Ok
         } catch (e: Exception) {

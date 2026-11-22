@@ -25,19 +25,19 @@ fun RulesScreen(nav: NavController) {
     var rules by remember { mutableStateOf(store.all()) }
     var text by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("ALIC Rules", onBack = { nav.popBackStack() })
+        ScreenHeader(uiBold("ALIC Rules"), onBack = { nav.popBackStack() })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
             NeoCard(Modifier.fillMaxWidth()) {
-                Text("Built-in: ALIC stays silent when more than one person is talking, and never interrupts a group conversation.", color = C.Sub, fontSize = 12.sp)
+                Text(uiBold("Built-in: ALIC stays silent when more than one person is talking, and never interrupts a group conversation."), color = C.Sub, fontSize = 12.sp)
             }
-            SectionTitle("YOUR RULES")
+            SectionTitle(uiBold("YOUR RULES"))
             NeoCard(Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    text, { text = it }, label = { Text("Write a rule") }, minLines = 2,
+                    text, { text = it }, label = { Text(uiBold("Write a rule")) }, minLines = 2,
                     modifier = Modifier.fillMaxWidth(), colors = fieldColors(), shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
                 )
                 Spacer(Modifier.height(8.dp))
-                RedButton("Add rule", {
+                RedButton(uiBold("Add rule"), {
                     if (text.isNotBlank()) {
                         val list = rules + AlicRule(UUID.randomUUID().toString(), text.trim(), true)
                         store.save(list); rules = list; text = ""
