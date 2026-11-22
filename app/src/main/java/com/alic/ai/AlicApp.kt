@@ -19,6 +19,7 @@ class AlicApp : Application() {
             previous?.uncaughtException(thread, error)
         }
         initLive()
+        try { com.alic.ai.licence.LicenceManager(this).sendSavedCrash(File(filesDir, "crash.txt")) } catch (e: Exception) {}
         com.alic.ai.data.AlicRuleState.refresh(com.alic.ai.data.AlicRuleStore(this).all())
         try {
             val nm = getSystemService(NotificationManager::class.java)

@@ -253,9 +253,13 @@ fun LicenceScreen(vm: AlicViewModel) {
             Spacer(Modifier.height(10.dp))
             Text(vm.licenceMsg, color = Color(0xFFB7CDBD), fontSize = 12.sp, textAlign = TextAlign.Center)
         }
+        if (vm.licenceSignedIn && vm.licence.savedKey().isNotBlank()) {
+            ResetRow(vm)
+        }
         Spacer(Modifier.height(18.dp))
         Text("Alic AI v1.0.0", color = Color(0xFF8AA392), fontSize = 12.sp)
         Text("Dream Big • Create More", color = Color(0xFF8AA392), fontSize = 11.sp)
+        Text("Expired or disabled? Renew on the website. Support: t.me/alicaizeta", color = Color(0xFF8AA392), fontSize = 11.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -302,5 +306,21 @@ private fun SupportRow() {
             Spacer(Modifier.width(6.dp))
             Text("Support", color = GreenHi, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
+    }
+}
+
+/** Asks the admin to reset the device binding (for a new phone). */
+@Composable
+private fun ResetRow(vm: AlicViewModel) {
+    var msg by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        TextButton(enabled = !busy, onClick = {
+            busy = true; msg = ""
+            vm.licence.requestDeviceReset { m -> msg = m; busy = false }
+        }) {
+            Text(if (busy) "Sending..." else "Request device reset (new phone)", color = GreenHi, fontSize = 13.sp)
+        }
+        if (msg.isNotBlank()) Text(msg, color = Color(0xFFB7CDBD), fontSize = 12.sp, textAlign = TextAlign.Center)
     }
 }

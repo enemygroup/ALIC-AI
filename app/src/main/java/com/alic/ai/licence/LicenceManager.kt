@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,6 +56,41 @@ class LicenceManager(private val ctx: Context) {
         }
     }
 
+    /** Sends a device-reset request to the admin (stored as a support message). */
+    fun requestDeviceReset(onDone: (String) -> Unit) {
+        val uid = currentUid()
+        val key = prefs.getString("key", null)
+        if (!configured() || uid == null || key == null) {
+            onDone("Sign in and activate a key first.")
+            return
+        }
+        val data = hashMapOf<String, Any>(
+            "type" to "device_reset", "key" to key, "uid" to uid,
+            "email" to (FirebaseAuth.getInstance().currentUser?.email ?: ""),
+            "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
+            "at" to System.currentTimeMillis(), "status" to "open"
+        )
+        FirebaseFirestore.getInstance().collection("supportMessages").add(data)
+            .addOnSuccessListener { onDone("Request sent. The admin will reset your device.") }
+            .addOnFailureListener { onDone("Could not send the request: " + (it.message ?: "error")) }
+    }
+
+    /** Uploads a saved crash report once the user is signed in, then deletes the local file. */
+    fun sendSavedCrash(file: File) {
+        if (!file.exists() || !configured()) return
+        val uid = currentUid() ?: return
+        val data = hashMapOf<String, Any>(
+            "type" to "crash", "uid" to uid,
+            "email" to (FirebaseAuth.getInstance().currentUser?.email ?: ""),
+            "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
+            "android" to Build.VERSION.RELEASE,
+            "trace" to file.readText().take(20000),
+            "at" to System.currentTimeMillis(), "status" to "open"
+        )
+        FirebaseFirestore.getInstance().collection("supportMessages").add(data)
+            .addOnSuccessListener { file.delete() }
+    }
+
     fun savedKey(): String = prefs.getString("key", "") ?: ""
     fun savedExpiry(): Long = prefs.getLong("exp", 0L)
 
@@ -81,6 +117,9 @@ class LicenceManager(private val ctx: Context) {
 
     private fun currentUid(): String? = if (configured()) FirebaseAuth.getInstance().currentUser?.uid else null
 
+    private fun deviceId(): String =
+        android.provider.Settings.Secure.getString(ctx.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
+
     private suspend fun check(key: String, uid: String, bind: Boolean): LicenceResult {
         return try {
             val ref = FirebaseFirestore.getInstance().collection("licenses").document(key)
@@ -91,17 +130,30 @@ class LicenceManager(private val ctx: Context) {
             if (exp != null && System.currentTimeMillis() > exp) {
                 return LicenceResult.Denied("This key expired on " + fmt(exp) + ".")
             }
+            val device = deviceId()
             val bound = snap.getString("boundUid")
+            val boundDevice = snap.getString("boundDevice")
+            val info = HashMap<String, Any>()
+            info["boundModel"] = "${Build.MANUFACTURER} ${Build.MODEL}"
+            info["boundEmail"] = FirebaseAuth.getInstance().currentUser?.email ?: ""
             if (bound == null) {
                 if (!bind) return LicenceResult.Denied("This key is not activated yet.")
-                ref.update(mapOf(
-                    "boundUid" to uid,
-                    "boundAt" to FieldValue.serverTimestamp(),
-                    "boundEmail" to (FirebaseAuth.getInstance().currentUser?.email ?: ""),
-                    "boundModel" to "${Build.MANUFACTURER} ${Build.MODEL}"
-                )).await()
+                val upd = HashMap<String, Any>(info)
+                upd["boundUid"] = uid
+                upd["boundDevice"] = device
+                upd["boundAt"] = FieldValue.serverTimestamp()
+                ref.update(upd).await()
             } else if (bound != uid) {
                 return LicenceResult.Denied("This key is already used on another account.")
+            } else if (boundDevice == null) {
+                if (bind) {
+                    val upd = HashMap<String, Any>(info)
+                    upd["boundDevice"] = device
+                    upd["boundAt"] = FieldValue.serverTimestamp()
+                    ref.update(upd).await()
+                }
+            } else if (boundDevice != device) {
+                return LicenceResult.Denied("This key is already used on another phone. Request a device reset from the licence screen.")
             }
             save(key, uid, exp)
             LicenceResult.Ok
