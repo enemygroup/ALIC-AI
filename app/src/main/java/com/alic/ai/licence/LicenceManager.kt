@@ -136,6 +136,18 @@ class LicenceManager(private val ctx: Context) {
             .addOnSuccessListener { file.delete() }
     }
 
+    /** Monthly, yearly and lifetime prices set by the admin on the website. Null if unavailable. */
+    suspend fun subscriptionPrices(): Triple<Long, Long, Long>? {
+        if (!configured()) return null
+        return try {
+            val s = FirebaseFirestore.getInstance().collection("appConfig").document("subscription").get().await()
+            if (!s.exists()) null
+            else Triple(s.getLong("monthly") ?: 99L, s.getLong("yearly") ?: 499L, s.getLong("lifetime") ?: 1999L)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun savedKey(): String = prefs.getString("key", "") ?: ""
     fun savedExpiry(): Long = prefs.getLong("exp", 0L)
     fun savedPlan(): String = prefs.getString("plan", "") ?: ""

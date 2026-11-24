@@ -67,7 +67,8 @@ data class AppSettings(
     val orbDensity: Float = 1f,
     val orbParticles: Boolean = true,
     val orbGlowOn: Boolean = true,
-    val orbStyle: String = "alic_a",
+    val replyLanguage: String = "auto",
+    val orbStyle: String = "bluesphere",
     val clapEnabled: Boolean = false,
     val clapMode: String = "double",         // single, double
     val clapSensitivity: String = "medium"   // low, medium, high     // aurora, red, cyan, blue, purple

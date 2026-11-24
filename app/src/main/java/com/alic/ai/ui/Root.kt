@@ -117,6 +117,7 @@ fun AlicRoot(vm: AlicViewModel) {
             composable("myplan") { MyPlanScreen(vm, nav) }
             composable("notifications") { NotificationCenterScreen(nav) }
             composable("help") { HelpSupportScreen(nav) }
+            composable("language") { LanguageScreen(vm, nav) }
             composable("imagegen") { ImageGenScreen(vm, nav) }
             composable("fileassist") { FileAssistScreen(vm, nav) }
             composable("vision") { VisionScreen(vm, nav) }

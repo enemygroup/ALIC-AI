@@ -4,7 +4,12 @@ package com.alic.ai.data
 object Prompts {
     const val VOICE_HINT = "\nYour reply will be spoken aloud: use plain conversational sentences, no Markdown, no lists, and keep it brief."
 
-    fun system(s: AppSettings, extra: String = ""): String = system0(s, extra + AlicRuleState.block)
+    fun system(s: AppSettings, extra: String = ""): String {
+        val lang = ReplyLanguages.byId(s.replyLanguage)
+        val langRule = if (lang.instruction.isBlank()) ""
+            else "\nAlways reply only in ${lang.instruction}, for every answer, even if the user writes in another language."
+        return system0(s, extra + AlicRuleState.block + langRule)
+    }
 
     private fun system0(s: AppSettings, extra: String = ""): String {
         val style = listOf(

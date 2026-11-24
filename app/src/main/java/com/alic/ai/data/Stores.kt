@@ -58,6 +58,7 @@ class SettingsStore(private val ctx: Context) {
         val orbDensity = floatPreferencesKey("orb_density")
         val orbParticles = booleanPreferencesKey("orb_particles")
         val orbGlowOn = booleanPreferencesKey("orb_glow_on")
+        val replyLang = stringPreferencesKey("reply_language")
     }
 
     private fun read(p: Preferences): AppSettings {
@@ -107,6 +108,7 @@ class SettingsStore(private val ctx: Context) {
             orbDensity = p[K.orbDensity] ?: d.orbDensity,
             orbParticles = p[K.orbParticles] ?: d.orbParticles,
             orbGlowOn = p[K.orbGlowOn] ?: d.orbGlowOn,
+            replyLanguage = p[K.replyLang] ?: d.replyLanguage,
             appTheme = p[K.appTheme] ?: d.appTheme
         )
     }
@@ -127,7 +129,7 @@ class SettingsStore(private val ctx: Context) {
             p[K.wakeSens] = s.wakeSensitivity; p[K.popupAnim] = s.popupAnimation
             p[K.silence] = s.silenceTimeoutSec; p[K.barge] = s.voiceInterruption
             p[K.announce] = s.announceCalls; p[K.persona] = s.persona; p[K.userName] = s.userName; p[K.imageModel] = s.imageModel
-            p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel; p[K.liveWake] = s.liveWakeOnly; p[K.orbStyle] = s.orbStyle; p[K.appTheme] = s.appTheme; p[K.orbSize] = s.orbSize; p[K.orbGlow] = s.orbGlow; p[K.orbSpeed] = s.orbSpeed; p[K.orbDensity] = s.orbDensity; p[K.orbParticles] = s.orbParticles; p[K.orbGlowOn] = s.orbGlowOn
+            p[K.replyLang] = s.replyLanguage; p[K.clapEnabled] = s.clapEnabled; p[K.clapMode] = s.clapMode; p[K.clapSens] = s.clapSensitivity; p[K.codingProv] = s.codingProvider; p[K.openaiModel] = s.openaiModel; p[K.liveWake] = s.liveWakeOnly; p[K.orbStyle] = s.orbStyle; p[K.appTheme] = s.appTheme; p[K.orbSize] = s.orbSize; p[K.orbGlow] = s.orbGlow; p[K.orbSpeed] = s.orbSpeed; p[K.orbDensity] = s.orbDensity; p[K.orbParticles] = s.orbParticles; p[K.orbGlowOn] = s.orbGlowOn
         }
     }
 }

@@ -22,6 +22,10 @@ import kotlin.math.*
 data class OrbDesign(val id: String, val label: String)
 
 val ORB_STYLES: List<OrbDesign> = listOf(
+    OrbDesign("bluesphere", "Blue Sphere"),
+    OrbDesign("motion", "Blue Motion"),
+    OrbDesign("lightning", "Lightning Core"),
+    OrbDesign("ember", "Red Ember"),
     OrbDesign("alic_a", "A (ALIC Premium)"),
     OrbDesign("holo", "Holographic"), OrbDesign("galaxy", "Galaxy"), OrbDesign("glass", "Liquid Glass"),
     OrbDesign("plasma", "Plasma"), OrbDesign("neon", "Neon"), OrbDesign("pearl", "Pearl"),
@@ -32,10 +36,10 @@ val ORB_STYLES: List<OrbDesign> = listOf(
 
 /** Old saved ids (dots, rings, waves, particles) map onto the new designs. */
 fun normalizeOrb(id: String): String = when (id) {
-    "dots", "particles" -> "particle"
     "rings" -> "reactor"
     "waves" -> "aqua"
-    else -> if (ORB_STYLES.any { it.id == id }) id else "alic_a"
+    "dots", "particles" -> "particle"
+    else -> if (ORB_STYLES.any { it.id == id }) id else "bluesphere"
 }
 
 private const val DOTS = 420
@@ -342,6 +346,10 @@ fun AlicOrb(state: OrbState, level: Float, modifier: Modifier = Modifier, animat
             particles = ThemeState.orbParticles, dark = ThemeState.isDark
         )
         when (normalizeOrb(ThemeState.orbStyle)) {
+            "bluesphere" -> styleBlueSphere(frame)
+            "motion" -> styleMotion(frame)
+            "lightning" -> styleLightning(frame)
+            "ember" -> styleEmber(frame)
             "holo" -> styleHolo(frame)
             "galaxy" -> styleGalaxy(frame)
             "glass" -> styleGlass(frame)
@@ -407,4 +415,112 @@ private fun DrawScope.styleAlicA(f: OrbFrame) {
             drawCircle(f.col(i).copy(alpha = 0.95f), (1.2f + (i % 3)) * f.unit, p)
         }
     }
+}
+
+/** Translucent blue sphere with swirling light ribbons, cyan and violet accents, and surface sparkles. */
+private fun DrawScope.styleBlueSphere(f: OrbFrame) {
+    val blue = Color(0xFF1E6BFF)
+    val cyan = Color(0xFF5CE1FF)
+    val violet = Color(0xFF9B5CFF)
+    halo(f, blue)
+    drawCircle(
+        Brush.radialGradient(
+            listOf(Color(0xCC2F7BFF), Color(0x6612308A), Color(0x00061030)),
+            center = Offset(f.c.x - f.r * 0.2f, f.c.y - f.r * 0.25f), radius = f.r * 1.1f
+        ),
+        f.r, f.c
+    )
+    for (k in 0 until 6) {
+        val path = Path()
+        val steps = 60
+        for (st in 0..steps) {
+            val t = st / steps.toFloat()
+            val ang = t * f.tau * 0.9f + k * f.tau / 6f + f.ph * f.tau
+            val rr = f.r * (0.25f + 0.55f * (0.5f + 0.5f * sin(t * f.tau * 2 + k)))
+            val x = f.c.x + cos(ang) * rr
+            val y = f.c.y + sin(ang) * rr * 0.7f
+            if (st == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, (if (k % 2 == 0) cyan else violet).copy(alpha = 0.35f), style = Stroke(3f * f.unit, cap = StrokeCap.Round))
+    }
+    val n = f.count(90)
+    for (i in 0 until n) {
+        val idx = (i % DOTS) * 3
+        val depth = ((SPHERE[idx + 2] + 1f) / 2f).coerceIn(0f, 1f)
+        val p = Offset(f.c.x + SPHERE[idx] * f.r * 0.95f, f.c.y + SPHERE[idx + 1] * f.r * 0.95f)
+        drawCircle((if (i % 3 == 0) cyan else blue).copy(alpha = 0.2f + 0.7f * depth), (0.8f + 1.8f * depth) * f.unit, p)
+    }
+    drawCircle(blue.copy(alpha = 0.7f), f.r, f.c, style = Stroke(2f * f.unit))
+    drawOval(Color.White.copy(alpha = 0.3f), topLeft = Offset(f.c.x - f.r * 0.5f, f.c.y - f.r * 0.6f), size = Size(f.r * 0.5f, f.r * 0.22f))
+}
+
+/** Blue core with orbiting blue-cyan particles on tilted rings (from the "Blue Motion" reference). */
+private fun DrawScope.styleMotion(f: OrbFrame) {
+    val blue = Color(0xFF2F6BFF)
+    val cyan = Color(0xFF7FE7FF)
+    halo(f, blue)
+    drawCircle(
+        Brush.radialGradient(listOf(cyan.copy(alpha = 0.9f), blue.copy(alpha = 0.5f), Color.Transparent), center = f.c, radius = f.r * 0.7f),
+        f.r * 0.7f, f.c
+    )
+    for (k in 0 until 3) {
+        val rx = f.r * (0.7f + 0.2f * k)
+        val ry = rx * 0.42f
+        val rot = k * 0.9f
+        val n = f.count(40)
+        for (i in 0 until n) {
+            val a = i * (f.tau / n) + f.ph * f.tau * (1f + k * 0.3f)
+            val x0 = cos(a) * rx
+            val y0 = sin(a) * ry
+            val x = f.c.x + x0 * cos(rot) - y0 * sin(rot)
+            val y = f.c.y + x0 * sin(rot) + y0 * cos(rot)
+            drawCircle(cyan.copy(alpha = 0.85f), (1.2f + (i % 3) * 0.6f) * f.unit, Offset(x, y))
+        }
+    }
+    drawCircle(Color.White.copy(alpha = 0.6f + 0.3f * f.lv), f.r * 0.12f, f.c)
+}
+
+/** Bright cyan core with jagged electric rays to the rim (from the "electric sphere" reference). */
+private fun DrawScope.styleLightning(f: OrbFrame) {
+    val cyan = Color(0xFF3FE6FF)
+    halo(f, cyan)
+    drawCircle(
+        Brush.radialGradient(listOf(Color.White, cyan.copy(alpha = 0.6f), Color(0x00003A5C)), center = f.c, radius = f.r),
+        f.r, f.c
+    )
+    val bolts = f.count(14)
+    for (k in 0 until bolts) {
+        val base = k * f.tau / bolts + f.ph * f.tau * 0.4f
+        val path = Path()
+        for (s in 0..10) {
+            val rr = f.r * s / 10f
+            val jit = sin(s * 3.7f + f.ph * f.tau * 8f + k * 2.1f) * f.r * 0.07f * (0.5f + f.lv + f.amp)
+            val x = f.c.x + cos(base) * rr - sin(base) * jit
+            val y = f.c.y + sin(base) * rr + cos(base) * jit
+            if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, cyan.copy(alpha = 0.8f), style = Stroke(1.6f * f.unit, cap = StrokeCap.Round))
+    }
+    drawCircle(cyan.copy(alpha = 0.5f), f.r, f.c, style = Stroke(2f * f.unit))
+}
+
+/** Dark red body with swirling orange and red ribbons (from the "red ribbon" reference). */
+private fun DrawScope.styleEmber(f: OrbFrame) {
+    val red = Color(0xFFFF3B2F)
+    val orange = Color(0xFFFF8A1F)
+    halo(f, red)
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF5A0D08), Color(0xFF2A0404)), center = f.c, radius = f.r), f.r, f.c)
+    for (k in 0 until 5) {
+        val path = Path()
+        for (s in 0..50) {
+            val t = s / 50f
+            val ang = t * f.tau * 1.2f + k * f.tau / 5f + f.ph * f.tau
+            val rr = f.r * (0.2f + 0.7f * t) * (0.7f + 0.3f * sin(t * f.tau + k))
+            val x = f.c.x + cos(ang) * rr
+            val y = f.c.y + sin(ang) * rr
+            if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, (if (k % 2 == 0) orange else red).copy(alpha = 0.7f), style = Stroke(4f * f.unit, cap = StrokeCap.Round))
+    }
+    drawCircle(Brush.radialGradient(listOf(orange.copy(alpha = 0.8f), Color.Transparent), center = f.c, radius = f.r * 0.35f), f.r * 0.35f, f.c)
 }

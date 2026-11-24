@@ -59,7 +59,7 @@ object ThemeState {
     var accentId by mutableStateOf("emerald")
     /** Full colour set chosen in Theme Studio; null = built-in mode and accent. */
     var palette by mutableStateOf<Palette?>(null)
-    var orbStyle by mutableStateOf("alic_a")
+    var orbStyle by mutableStateOf("bluesphere")
     /** Plan tier of the active licence: changes badges, orb intensity and popup colours. */
     var planTier by mutableStateOf(com.alic.ai.licence.PlanTier.BASIC)
     var orbSize by mutableStateOf(1f)

@@ -192,60 +192,133 @@ fun MyPlanScreen(vm: AlicViewModel, nav: NavController) {
     }
 }
 
-/** Plans and features. Prices are shown only if the website provides them; purchases happen on the website. */
+/** A single plan card. The button opens the website (the only place to buy). */
+@Composable
+private fun PlanCardPremium(title: String, subtitle: String, price: String, unit: String, features: List<String>, button: String, highlight: Boolean, onClick: () -> Unit) {
+    val gold = Color(0xFFFFD54A)
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))
+            .background(Color(0xCC061A10))
+            .border(if (highlight) 2.dp else 1.dp, if (highlight) gold else C.Neon.copy(alpha = 0.6f), RoundedCornerShape(22.dp))
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (highlight) {
+            Text(uiBold("Most Popular"), color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(gold).padding(horizontal = 12.dp, vertical = 4.dp))
+            Spacer(Modifier.height(6.dp))
+        }
+        Text(uiBold(title), color = C.Text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(subtitle, color = C.Sub, fontSize = 12.sp)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(price, color = if (highlight) gold else C.Text, fontWeight = FontWeight.Black, fontSize = 32.sp)
+            Spacer(Modifier.width(4.dp))
+            Text(unit, color = C.Sub, fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
+        }
+        features.forEach { f -> Text("✓  $f", color = C.Text, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
+        Spacer(Modifier.height(10.dp))
+        RedButton(uiBold(button), onClick, Modifier.fillMaxWidth())
+    }
+}
+
+/** Premium page: banner, benefits, three plans (prices from the website), current membership and buttons. */
 @Composable
 fun PremiumScreen(vm: AlicViewModel, nav: NavController) {
     val ctx = LocalContext.current
     val info = licenceInfo(vm)
+    var prices by remember { mutableStateOf<Triple<Long, Long, Long>?>(null) }
+    var loaded by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        prices = vm.licence.subscriptionPrices()
+        loaded = true
+    }
+    val monthly = prices?.first ?: 99L
+    val yearly = prices?.second ?: 499L
+    val lifetime = prices?.third ?: 1999L
+    val gold = Color(0xFFFFD54A)
     val pulse by rememberInfiniteTransition(label = "crown").animateFloat(
         0.92f, 1.08f, infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "crownPulse"
     )
+
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader(uiBold("Premium"), onBack = { nav.popBackStack() }) {}
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(uiBold("👑"), fontSize = 56.sp, modifier = Modifier.graphicsLayer { scaleX = pulse; scaleY = pulse })
-            Text(uiBold("Unlock the full power of ALIC AI"), color = C.Text, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(6.dp))
-            Text("Current plan: ${if (info.key.isBlank()) "Free" else info.tier.label}", color = C.Neon, fontWeight = FontWeight.SemiBold)
+        ScreenHeader("Premium", onBack = { nav.popBackStack() }) {}
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Banner
+            Text("👑", fontSize = 52.sp, modifier = Modifier.graphicsLayer { scaleX = pulse; scaleY = pulse })
+            Text(uiBold("ALIC AI PREMIUM"), color = gold, fontWeight = FontWeight.Black, fontSize = 24.sp, textAlign = TextAlign.Center)
+            Text(uiBold("Unlock the full power of ALIC AI"), color = C.Text, fontSize = 14.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(14.dp))
 
+            // Benefits
             NeoCard(Modifier.fillMaxWidth()) {
                 listOf(
-                    "Voice assistant (Hey Alic)",
-                    "AI chat and tools",
-                    "Image analysis and text reading (OCR)",
-                    "Image compare",
-                    "YouTube playback and media control",
-                    "WhatsApp automation",
-                    "Priority support on Telegram"
-                ).forEach { f ->
-                    Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.CheckCircle, null, tint = OkGreen)
-                        Spacer(Modifier.width(8.dp))
-                        Text(f, color = C.Text, fontSize = 14.sp)
-                    }
-                }
+                    "⚡  AI chats within your plan",
+                    "🧠  Advanced AI models",
+                    "🚫  No ads experience",
+                    "🛟  Priority support",
+                    "🎨  Exclusive themes",
+                    "🛠  More AI tools"
+                ).forEach { Text(it, color = C.Text, fontSize = 14.sp, modifier = Modifier.padding(vertical = 3.dp)) }
             }
 
-            Spacer(Modifier.height(14.dp))
-            SectionTitle(uiBold("PLANS"))
-            listOf("Monthly" to "15 or 30 days", "Yearly" to "6 months or 1 year", "Lifetime" to "Never expires").forEach { (name, desc) ->
-                NeoCard(Modifier.fillMaxWidth().padding(bottom = 8.dp), onClick = { openLink(ctx, UPGRADE_URL) }) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(name, color = C.Text, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(desc, color = C.Sub, fontSize = 12.sp)
-                        }
-                        Text(uiBold("See price →"), color = C.Neon, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
+            // Plans
+            Spacer(Modifier.height(16.dp))
+            PlanCardPremium("Monthly Plan", "Perfect for short-term use", "₹$monthly", "/month",
+                listOf("Full Premium Access", "All AI Tools"), "Choose Plan", false) { openLink(ctx, UPGRADE_URL) }
+            Spacer(Modifier.height(12.dp))
+            PlanCardPremium("Yearly Plan", "Best value for you", "₹$yearly", "/year",
+                listOf("Full Premium Access", "All AI Tools", "Priority Support"), "Upgrade Now", true) { openLink(ctx, UPGRADE_URL) }
+            Spacer(Modifier.height(12.dp))
+            PlanCardPremium("Lifetime Plan", "One-time payment", "₹$lifetime", "one-time",
+                listOf("Lifetime Access", "All Premium Features", "VIP Support"), "Buy Now", false) { openLink(ctx, UPGRADE_URL) }
+            if (loaded && prices == null) {
+                Text("Showing default prices. The server price could not be loaded.", color = C.Muted, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
             }
-            Text(uiBold("Prices and payment are on the ALIC AI website. Your license works in the app after you activate it."), color = C.Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
 
+            // Current membership
+            Spacer(Modifier.height(16.dp))
+            SectionTitle("CURRENT MEMBERSHIP")
+            NeoCard(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(uiBold("Current plan"), color = C.Sub, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(info.plan, color = gold, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(uiBold("License status"), color = C.Sub, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(info.status, color = info.color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(uiBold("Expires on"), color = C.Sub, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(fmtDate(info.expiry), color = C.Text, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(uiBold("Remaining"), color = C.Sub, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(
+                        if (info.daysLeft < 0 && info.key.isNotBlank()) "Lifetime"
+                        else if (info.key.isBlank()) "Not activated"
+                        else "${maxOf(info.daysLeft, 0)} days",
+                        color = C.Neon, fontWeight = FontWeight.Bold, fontSize = 14.sp
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                RedButton(uiBold("Renew Subscription"), { openLink(ctx, UPGRADE_URL) }, Modifier.fillMaxWidth())
+            }
+
+            // Buttons
             Spacer(Modifier.height(14.dp))
-            RedButton(uiBold("Upgrade now"), { openLink(ctx, UPGRADE_URL) }, Modifier.fillMaxWidth())
+            GhostButton(uiBold("Payment History"), { openLink(ctx, UPGRADE_URL) }, Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            GhostButton(uiBold("My license"), { nav.navigate("myplan") }, Modifier.fillMaxWidth())
+            GhostButton(uiBold("My License"), { nav.navigate("myplan") }, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            GhostButton(uiBold("Help & Support"), { nav.navigate("help") }, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Prices and payment happen on the ALIC AI website. Premium activates only after your license is verified, never from a button press.",
+                color = C.Muted, fontSize = 11.sp, textAlign = TextAlign.Center
+            )
         }
     }
 }

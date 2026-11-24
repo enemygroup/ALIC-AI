@@ -359,6 +359,7 @@ fun SettingsScreen(vm: AlicViewModel, nav: NavController) {
             SectionTitle(uiBold("ALIC RULES"))
             ListRow(Icons.Filled.Gavel, uiBold("ALIC Rules"), uiBold("Your own rules for how ALIC behaves"), onClick = { nav.navigate("rules") })
 
+            ListRow(Icons.Filled.Info, "Reply language", ReplyLanguages.byId(s.replyLanguage).label, onClick = { nav.navigate("language") })
             UpgradeRow()
 
             SectionTitle(uiBold("AUTOMATION"))
