@@ -1,5 +1,7 @@
 package com.alic.ai.ui
 
+import com.alic.ai.data.ReplyLanguages
+
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.ui.graphics.asImageBitmap
